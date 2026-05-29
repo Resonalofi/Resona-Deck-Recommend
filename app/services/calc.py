@@ -2,7 +2,7 @@ import time
 
 from typing import Optional
 
-from sekai_deck_recommend import (
+from sekai_deck_recommend_cpp import (
     SekaiDeckRecommend,
     DeckRecommendCardConfig,
     DeckRecommendOptions,
