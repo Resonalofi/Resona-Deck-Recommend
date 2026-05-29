@@ -1,7 +1,7 @@
 [project]
 name = "Resona-Deck-Recommend"
-version = "0.1.0"
-description = "Standalone deck recommend (组卡) calculation service for PJSK"
+version = "1.0.0"
+description = "Deck recommend service for PJSK"
 readme = "README.md"
 requires-python = ">=3.12, <4.0"
 dependencies = [
