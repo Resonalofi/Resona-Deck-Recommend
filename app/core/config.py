@@ -26,6 +26,7 @@ class MasterdataServer(FetchSource):
 class RuntimeSettings(BaseModel):
     host: str = "127.0.0.1"
     port: int = 23457
+    workers: int = 1
 
 
 class AuthSettings(BaseModel):

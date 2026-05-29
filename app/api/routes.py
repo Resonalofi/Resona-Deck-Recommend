@@ -2,7 +2,7 @@ import time
 import asyncio
 import functools
 
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 
 import orjson
 
@@ -21,7 +21,7 @@ router = APIRouter(dependencies=[Depends(require_secret)])
 
 
 @router.post("/deck/recommend", response_model=RecommendResponse)
-async def recommend(req: RecommendRequest, cache: MasterdataCache = Depends(get_cache), pool: ProcessPoolExecutor = Depends(get_pool)) -> RecommendResponse:
+async def recommend(req: RecommendRequest, cache: MasterdataCache = Depends(get_cache), pool: ThreadPoolExecutor = Depends(get_pool)) -> RecommendResponse:
 
     wl_ver = wl_version(req.event_id)
     master_bytes = await cache.get_master_bytes(req.server, wl_ver)

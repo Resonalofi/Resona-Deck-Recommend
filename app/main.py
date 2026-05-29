@@ -1,6 +1,6 @@
 import setproctitle
 from contextlib import asynccontextmanager
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
@@ -14,7 +14,7 @@ from app.services.cache import MasterdataCache
 async def lifespan(app: FastAPI):
     setproctitle.setproctitle("Resona-Deck-Recommend")
     app.state.cache = MasterdataCache(settings)
-    app.state.pool = ProcessPoolExecutor(max_workers=settings.worker.pool_size)
+    app.state.pool = ThreadPoolExecutor(max_workers=settings.worker.pool_size)
     try:
         yield
     finally:

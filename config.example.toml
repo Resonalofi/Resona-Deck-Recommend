@@ -1,12 +1,13 @@
 [runtime]
 host = "127.0.0.1"
 port = 23457
+worker = 1
 
 [auth]
 resona_secret = ""
 
 [worker]
-pool_size = 1
+pool_size = 2
 default_timeout_ms = 8000
 wl_timeout_ms = 12000
 

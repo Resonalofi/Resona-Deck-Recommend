@@ -1,4 +1,4 @@
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import Request
 
@@ -9,5 +9,5 @@ def get_cache(request: Request) -> MasterdataCache:
     return request.app.state.cache
 
 
-def get_pool(request: Request) -> ProcessPoolExecutor:
+def get_pool(request: Request) -> ThreadPoolExecutor:
     return request.app.state.pool

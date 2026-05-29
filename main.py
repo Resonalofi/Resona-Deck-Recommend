@@ -10,6 +10,7 @@ def main() -> None:
         "app.main:app",
         host=settings.host,
         port=settings.port,
+        workers=settings.runtime.workers,
         loop="uvloop" if sys.platform != "win32" else "asyncio",
         log_level="info",
     )
