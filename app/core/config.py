@@ -15,6 +15,7 @@ class FetchSource(BaseModel):
 class MasterdataServer(FetchSource):
     musicmeta: str
     musicmeta_fallback: list[str] = Field(default_factory=list)
+    masterdata_override: bool = False
 
 
     @property
@@ -63,7 +64,9 @@ class Settings(BaseModel):
             return self.wl_support["wl2"]
         if key == "honors":
             return self.masterdata[server]
-        return self.masterdata[Server.jp]
+        if self.masterdata[Server.jp].masterdata_override:
+            return self.masterdata[Server.jp]
+        return self.masterdata[server]
 
 
 def load_settings() -> Settings:

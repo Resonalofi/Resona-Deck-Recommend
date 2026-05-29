@@ -15,6 +15,7 @@ location = ""
 fallback = [""]
 musicmeta = ""
 musicmeta_fallback = [""]
+masterdata_override = true
 
 [masterdata.cn]
 location = ""
