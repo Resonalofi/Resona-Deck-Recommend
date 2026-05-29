@@ -2,7 +2,7 @@ import tomllib
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 from app.enums import Server
 
@@ -67,6 +67,11 @@ class Settings(BaseModel):
         if self.masterdata[Server.jp].masterdata_override:
             return self.masterdata[Server.jp]
         return self.masterdata[server]
+
+    def musicmeta_source_for(self, server: Server) -> FetchSource:
+        if self.masterdata[Server.jp].masterdata_override:
+            return self.masterdata[Server.jp].musicmeta_source
+        return self.masterdata[server].musicmeta_source
 
 
 def load_settings() -> Settings:

@@ -31,7 +31,7 @@ class MasterdataCache:
 
     async def get_musicmetas_bytes(self, server: Server) -> bytes:
         async with self._lock:
-            return await self._get_cached(self._settings.masterdata[server].musicmeta_source, "music_metas")
+            return await self._get_cached(self._settings.musicmeta_source_for(server), "music_metas")
 
 
     async def reload(self, server: Server) -> None:
