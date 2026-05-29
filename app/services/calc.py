@@ -1,5 +1,4 @@
 import time
-
 from typing import Optional
 
 from sekai_deck_recommend_cpp import (
@@ -10,6 +9,7 @@ from sekai_deck_recommend_cpp import (
 )
 
 from app.enums import DefaultImage
+from app.services.memory import release_unused_native_memory
 from app.schemas import RecommendCard, RecommendDeck
 
 
@@ -44,6 +44,7 @@ def cal_deck_recommend(
 
     decker.update_masterdata_from_strings(master_bytes, server)
     decker.update_musicmetas_from_string(music_metas_bytes, server)
+    release_unused_native_memory()
 
     options = DeckRecommendOptions()
     options.target = cal_tar
@@ -96,12 +97,15 @@ def cal_deck_recommend(
     durations: dict[str, float] = {}
     result_list = []
 
-    for alg in alg_list:
-        options.algorithm = alg
-        start_time = time.perf_counter()
-        result = decker.recommend(options)
-        durations[alg] = time.perf_counter() - start_time
-        result_list.append((alg, result))
+    try:
+        for alg in alg_list:
+            options.algorithm = alg
+            start_time = time.perf_counter()
+            result = decker.recommend(options)
+            durations[alg] = time.perf_counter() - start_time
+            result_list.append((alg, result))
+    finally:
+        release_unused_native_memory()
 
     # 合并去重，记录每个卡组来自哪些算法
     decks = []

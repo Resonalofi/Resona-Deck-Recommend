@@ -14,6 +14,7 @@ from app.core.security import require_secret
 from app.enums import Server
 from app.services.cache import MasterdataCache
 from app.services.calc import cal_deck_recommend
+from app.services.memory import release_unused_native_memory
 from app.schemas import RecommendRequest, RecommendResponse, ReloadResponse
 from app.utils import algorithms, build_event_cards_config, wl_version
 
@@ -58,8 +59,11 @@ async def recommend(req: RecommendRequest, cache: MasterdataCache = Depends(get_
 
     loop = asyncio.get_running_loop()
     start = time.perf_counter()
-    decks, durations = await loop.run_in_executor(pool, runner)
-    queue_wait = (time.perf_counter() - start) - sum(durations.values())
+    try:
+        decks, durations = await loop.run_in_executor(pool, runner)
+        queue_wait = (time.perf_counter() - start) - sum(durations.values())
+    finally:
+        release_unused_native_memory()
 
     return RecommendResponse(decks=decks, durations=durations, queue_wait=queue_wait)
 
