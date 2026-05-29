@@ -1,0 +1,37 @@
+[runtime]
+host = "127.0.0.1"
+port = 23457
+
+[auth]
+resona_secret = ""
+
+[worker]
+pool_size = 1
+default_timeout_ms = 8000
+wl_timeout_ms = 12000
+
+[masterdata.jp]
+location = ""
+fallback = [""]
+musicmeta = ""
+musicmeta_fallback = [""]
+
+[masterdata.cn]
+location = ""
+fallback = [""]
+musicmeta = ""
+musicmeta_fallback = [""]
+
+[masterdata.tw]
+location = ""
+fallback = [""]
+musicmeta = ""
+musicmeta_fallback = [""]
+
+[wl_support.wl1]
+location = ""
+fallback = []
+
+[wl_support.wl2]
+location = ""
+fallback = []
