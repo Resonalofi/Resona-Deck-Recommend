@@ -16,6 +16,8 @@ class LiveType(str, Enum):
 
 class CalTar(str, Enum):
     score = "score"
+    power = "power"
+    skill = "skill"
     bonus = "bonus"
 
 

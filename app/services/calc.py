@@ -119,7 +119,16 @@ def cal_deck_recommend(
             else:
                 sources_map[key] += f"+{alg}"
 
-    decks.sort(key=lambda d: d.score, reverse=True)
+    def deck_key(deck):
+        if cal_tar == "power":
+            return deck.total_power
+        if cal_tar == "skill":
+            return deck.multi_live_score_up
+        if cal_tar == "bonus":
+            return (deck.event_bonus_rate, deck.score)
+        return (deck.score, deck.multi_live_score_up)
+
+    decks.sort(key=deck_key, reverse=True)
 
     return [
         RecommendDeck(
