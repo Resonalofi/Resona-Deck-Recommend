@@ -8,12 +8,14 @@ from fastapi.responses import ORJSONResponse
 from app.api import api_router
 from app.core.config import settings
 from app.services.cache import MasterdataCache
+from app.services.calc import DeckRecommendEngine
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setproctitle.setproctitle("Resona-Deck-Recommend")
     app.state.cache = MasterdataCache(settings)
+    app.state.engine = DeckRecommendEngine()
     app.state.pool = ThreadPoolExecutor(max_workers=settings.worker.pool_size)
     try:
         yield

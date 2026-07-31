@@ -1,4 +1,6 @@
 import time
+import threading
+from contextlib import nullcontext
 from typing import Optional
 
 from sekai_deck_recommend_cpp import (
@@ -11,6 +13,15 @@ from sekai_deck_recommend_cpp import (
 from app.enums import DefaultImage
 from app.services.memory import release_unused_native_memory
 from app.schemas import RecommendCard, RecommendDeck
+
+
+class DeckRecommendEngine:
+    def __init__(self) -> None:
+        self._decker: SekaiDeckRecommend | None = None
+        self._lock = threading.Lock()
+        self._server: str | None = None
+        self._master_snapshot: tuple[tuple[str, bytes], ...] | None = None
+        self._music_snapshot: bytes | None = None
 
 
 def cal_deck_recommend(
@@ -38,74 +49,100 @@ def cal_deck_recommend(
     event_cards_config_list: list[dict],
     require_characters: list[int],
     card_config: dict[str, dict],
+    engine: DeckRecommendEngine | None = None,
 ) -> tuple[list[RecommendDeck], dict[str, float]]:
 
-    decker = SekaiDeckRecommend()
+    decker = SekaiDeckRecommend() if engine is None else None
+    with (nullcontext() if engine is None else engine._lock):
+        if engine is not None:
+            if engine._decker is None or engine._server != server:
+                engine._decker = SekaiDeckRecommend()
+                engine._server = server
+                engine._master_snapshot = None
+                engine._music_snapshot = None
+            decker = engine._decker
 
-    decker.update_masterdata_from_strings(master_bytes, server)
-    decker.update_musicmetas_from_string(music_metas_bytes, server)
-    release_unused_native_memory()
-
-    options = DeckRecommendOptions()
-    options.target = cal_tar
-    options.region = server
-    options.user_data_str = user_data_bytes
-
-    options.live_type = live_type
-
-    options.music_id = music_id
-    options.music_diff = music_diff
-
-    options.timeout_ms = default_timeout_ms
-
-    if event_cards_config_list:
-        options.single_card_configs = [DeckRecommendSingleCardConfig.from_dict(card) for card in event_cards_config_list]
-        options.fixed_cards = [card["card_id"] for card in require_cards] + [card["card_id"] for card in event_cards_config_list]
-    elif require_cards:
-        options.single_card_configs = [DeckRecommendSingleCardConfig.from_dict(card) for card in require_cards]
-        options.fixed_cards = [card["card_id"] for card in require_cards]
-    elif require_characters:
-        options.fixed_characters = require_characters
-
-    if live_type == "multi":
-        options.multi_live_teammate_score_up = real_skill
-        options.multi_live_teammate_power = multi_live_teammate_power
-
-    if tar_bonus_list:
-        options.target_bonus_list = tar_bonus_list
-        options.limit = max(1, 6 // len(tar_bonus_list))
-    else:
-        options.limit = 6
-        options.rarity_1_config = DeckRecommendCardConfig.from_dict(card_config.get('1'))
-        options.rarity_2_config = DeckRecommendCardConfig.from_dict(card_config.get('2'))
-        options.rarity_3_config = DeckRecommendCardConfig.from_dict(card_config.get('3'))
-        options.rarity_4_config = DeckRecommendCardConfig.from_dict(card_config.get('4'))
-        options.rarity_birthday_config = DeckRecommendCardConfig.from_dict(card_config.get('birthday'))
-
-    if live_type == "challenge":
-        options.challenge_live_character_id = challenge_live_character_id
-        options.fixed_characters = None
-    elif force_wl:
-        options.event_id = event_id
-        options.world_bloom_character_id = world_bloom_character_id
-        options.timeout_ms = wl_timeout_ms
-    else:
-        options.event_id = event_id
-        options.event_attr = event_attr
-        options.event_unit = event_unit
-
-    durations: dict[str, float] = {}
-    result_list = []
-
-    try:
-        for alg in alg_list:
-            options.algorithm = alg
-            start_time = time.perf_counter()
-            result = decker.recommend(options)
-            durations[alg] = time.perf_counter() - start_time
-            result_list.append((alg, result))
-    finally:
+            master_snapshot = tuple(sorted(master_bytes.items()))
+            loaded_master_snapshot = engine._master_snapshot
+            if (
+                loaded_master_snapshot is None
+                or len(loaded_master_snapshot) != len(master_snapshot)
+                or any(
+                    old_key != new_key or old_value is not new_value
+                    for (old_key, old_value), (new_key, new_value)
+                    in zip(loaded_master_snapshot, master_snapshot)
+                )
+            ):
+                decker.update_masterdata_from_strings(master_bytes, server)
+                engine._master_snapshot = master_snapshot
+            if engine._music_snapshot is not music_metas_bytes:
+                decker.update_musicmetas_from_string(music_metas_bytes, server)
+                engine._music_snapshot = music_metas_bytes
+        else:
+            decker.update_masterdata_from_strings(master_bytes, server)
+            decker.update_musicmetas_from_string(music_metas_bytes, server)
         release_unused_native_memory()
+
+        options = DeckRecommendOptions()
+        options.target = cal_tar
+        options.region = server
+        options.user_data_str = user_data_bytes
+
+        options.live_type = live_type
+
+        options.music_id = music_id
+        options.music_diff = music_diff
+
+        options.timeout_ms = default_timeout_ms
+
+        if event_cards_config_list:
+            options.single_card_configs = [DeckRecommendSingleCardConfig.from_dict(card) for card in event_cards_config_list]
+            options.fixed_cards = [card["card_id"] for card in require_cards] + [card["card_id"] for card in event_cards_config_list]
+        elif require_cards:
+            options.single_card_configs = [DeckRecommendSingleCardConfig.from_dict(card) for card in require_cards]
+            options.fixed_cards = [card["card_id"] for card in require_cards]
+        elif require_characters:
+            options.fixed_characters = require_characters
+
+        if live_type == "multi":
+            options.multi_live_teammate_score_up = real_skill
+            options.multi_live_teammate_power = multi_live_teammate_power
+
+        if tar_bonus_list:
+            options.target_bonus_list = tar_bonus_list
+            options.limit = max(1, 6 // len(tar_bonus_list))
+        else:
+            options.limit = 6
+            options.rarity_1_config = DeckRecommendCardConfig.from_dict(card_config.get('1'))
+            options.rarity_2_config = DeckRecommendCardConfig.from_dict(card_config.get('2'))
+            options.rarity_3_config = DeckRecommendCardConfig.from_dict(card_config.get('3'))
+            options.rarity_4_config = DeckRecommendCardConfig.from_dict(card_config.get('4'))
+            options.rarity_birthday_config = DeckRecommendCardConfig.from_dict(card_config.get('birthday'))
+
+        if live_type == "challenge":
+            options.challenge_live_character_id = challenge_live_character_id
+            options.fixed_characters = None
+        elif force_wl:
+            options.event_id = event_id
+            options.world_bloom_character_id = world_bloom_character_id
+            options.timeout_ms = wl_timeout_ms
+        else:
+            options.event_id = event_id
+            options.event_attr = event_attr
+            options.event_unit = event_unit
+
+        durations: dict[str, float] = {}
+        result_list = []
+
+        try:
+            for alg in alg_list:
+                options.algorithm = alg
+                start_time = time.perf_counter()
+                result = decker.recommend(options)
+                durations[alg] = time.perf_counter() - start_time
+                result_list.append((alg, result))
+        finally:
+            release_unused_native_memory()
 
     # 合并去重，记录每个卡组来自哪些算法
     decks = []

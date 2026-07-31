@@ -8,12 +8,12 @@ import orjson
 
 from fastapi import APIRouter, Depends
 
-from app.api.deps import get_cache, get_pool
+from app.api.deps import get_cache, get_engine, get_pool
 from app.core.config import settings
 from app.core.security import require_secret
 from app.enums import Server
 from app.services.cache import MasterdataCache
-from app.services.calc import cal_deck_recommend
+from app.services.calc import DeckRecommendEngine, cal_deck_recommend
 from app.services.memory import release_unused_native_memory
 from app.schemas import RecommendRequest, RecommendResponse, ReloadResponse
 from app.utils import algorithms, build_event_cards_config, wl_version
@@ -22,7 +22,12 @@ router = APIRouter(dependencies=[Depends(require_secret)])
 
 
 @router.post("/deck/recommend", response_model=RecommendResponse)
-async def recommend(req: RecommendRequest, cache: MasterdataCache = Depends(get_cache), pool: ThreadPoolExecutor = Depends(get_pool)) -> RecommendResponse:
+async def recommend(
+    req: RecommendRequest,
+    cache: MasterdataCache = Depends(get_cache),
+    pool: ThreadPoolExecutor = Depends(get_pool),
+    engine: DeckRecommendEngine = Depends(get_engine),
+) -> RecommendResponse:
 
     wl_ver = wl_version(req.event_id)
     master_bytes = await cache.get_master_bytes(req.server, wl_ver)
@@ -55,6 +60,7 @@ async def recommend(req: RecommendRequest, cache: MasterdataCache = Depends(get_
         event_cards_config_list=event_cards_config_list,
         require_characters=req.require_characters,
         card_config={rarity: cfg.model_dump() for rarity, cfg in req.card_config.items()},
+        engine=engine,
     )
 
     loop = asyncio.get_running_loop()
