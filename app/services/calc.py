@@ -11,17 +11,23 @@ from sekai_deck_recommend_cpp import (
 )
 
 from app.enums import DefaultImage
-from app.services.memory import release_unused_native_memory
 from app.schemas import RecommendCard, RecommendDeck
 
 
 class DeckRecommendEngine:
     def __init__(self) -> None:
-        self._decker: SekaiDeckRecommend | None = None
+        self._deckers: dict[int, SekaiDeckRecommend] = {}
         self._lock = threading.Lock()
-        self._server: str | None = None
-        self._master_snapshot: tuple[tuple[str, bytes], ...] | None = None
-        self._music_snapshot: bytes | None = None
+        self._master_generations: dict[tuple[str, int], int] = {}
+        self._music_generations: dict[tuple[str, int], int] = {}
+
+    def needs_masterdata(self, server: str, variant: int, generation: int) -> bool:
+        with self._lock:
+            return self._master_generations.get((server, variant)) != generation
+
+    def needs_musicmetas(self, server: str, variant: int, generation: int) -> bool:
+        with self._lock:
+            return self._music_generations.get((server, variant)) != generation
 
 
 def cal_deck_recommend(
@@ -39,8 +45,8 @@ def cal_deck_recommend(
     cal_tar: str,
     tar_bonus_list: list[int],
     alg_list: list[str],
-    master_bytes: dict[str, bytes],
-    music_metas_bytes: bytes,
+    master_bytes: dict[str, bytes] | None,
+    music_metas_bytes: bytes | None,
     multi_live_teammate_power: int,
     default_timeout_ms: int,
     wl_timeout_ms: int,
@@ -49,39 +55,35 @@ def cal_deck_recommend(
     event_cards_config_list: list[dict],
     require_characters: list[int],
     card_config: dict[str, dict],
+    master_generation: int = 0,
+    master_variant: int = 1,
+    music_generation: int = 0,
     engine: DeckRecommendEngine | None = None,
 ) -> tuple[list[RecommendDeck], dict[str, float]]:
 
     decker = SekaiDeckRecommend() if engine is None else None
     with (nullcontext() if engine is None else engine._lock):
         if engine is not None:
-            if engine._decker is None or engine._server != server:
-                engine._decker = SekaiDeckRecommend()
-                engine._server = server
-                engine._master_snapshot = None
-                engine._music_snapshot = None
-            decker = engine._decker
-
-            master_snapshot = tuple(sorted(master_bytes.items()))
-            loaded_master_snapshot = engine._master_snapshot
-            if (
-                loaded_master_snapshot is None
-                or len(loaded_master_snapshot) != len(master_snapshot)
-                or any(
-                    old_key != new_key or old_value is not new_value
-                    for (old_key, old_value), (new_key, new_value)
-                    in zip(loaded_master_snapshot, master_snapshot)
-                )
-            ):
+            decker = engine._deckers.get(master_variant)
+            if decker is None:
+                decker = SekaiDeckRecommend()
+                engine._deckers[master_variant] = decker
+            master_key = (server, master_variant)
+            if engine._master_generations.get(master_key) != master_generation:
+                if master_bytes is None:
+                    raise RuntimeError("masterdata payload is required for a new generation")
                 decker.update_masterdata_from_strings(master_bytes, server)
-                engine._master_snapshot = master_snapshot
-            if engine._music_snapshot is not music_metas_bytes:
+                engine._master_generations[master_key] = master_generation
+            if engine._music_generations.get(master_key) != music_generation:
+                if music_metas_bytes is None:
+                    raise RuntimeError("music metas payload is required for a new generation")
                 decker.update_musicmetas_from_string(music_metas_bytes, server)
-                engine._music_snapshot = music_metas_bytes
+                engine._music_generations[master_key] = music_generation
         else:
+            if master_bytes is None or music_metas_bytes is None:
+                raise RuntimeError("masterdata and music metas payloads are required")
             decker.update_masterdata_from_strings(master_bytes, server)
             decker.update_musicmetas_from_string(music_metas_bytes, server)
-        release_unused_native_memory()
 
         options = DeckRecommendOptions()
         options.target = cal_tar
@@ -134,15 +136,12 @@ def cal_deck_recommend(
         durations: dict[str, float] = {}
         result_list = []
 
-        try:
-            for alg in alg_list:
-                options.algorithm = alg
-                start_time = time.perf_counter()
-                result = decker.recommend(options)
-                durations[alg] = time.perf_counter() - start_time
-                result_list.append((alg, result))
-        finally:
-            release_unused_native_memory()
+        for alg in alg_list:
+            options.algorithm = alg
+            start_time = time.perf_counter()
+            result = decker.recommend(options)
+            durations[alg] = time.perf_counter() - start_time
+            result_list.append((alg, result))
 
     # 合并去重，记录每个卡组来自哪些算法
     decks = []

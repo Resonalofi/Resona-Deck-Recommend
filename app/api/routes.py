@@ -14,7 +14,6 @@ from app.core.security import require_secret
 from app.enums import Server
 from app.services.cache import MasterdataCache
 from app.services.calc import DeckRecommendEngine, cal_deck_recommend
-from app.services.memory import release_unused_native_memory
 from app.schemas import RecommendRequest, RecommendResponse, ReloadResponse
 from app.utils import algorithms, build_event_cards_config, wl_version
 
@@ -30,9 +29,28 @@ async def recommend(
 ) -> RecommendResponse:
 
     wl_ver = wl_version(req.event_id)
-    master_bytes = await cache.get_master_bytes(req.server, wl_ver)
-    music_metas_bytes = await cache.get_musicmetas_bytes(req.server)
-    event_cards_config_list = build_event_cards_config(master_bytes, req.event_id, req.bonus_cards)
+    generation = cache.generation_for(req.server)
+    master_bytes = (
+        await cache.get_master_bytes(req.server, wl_ver)
+        if engine.needs_masterdata(req.server.value, wl_ver, generation)
+        else None
+    )
+    music_metas_bytes = (
+        await cache.get_musicmetas_bytes(req.server)
+        if engine.needs_musicmetas(req.server.value, wl_ver, generation)
+        else None
+    )
+    if req.bonus_cards and req.bonus_cards.force:
+        event_cards_bytes = (
+            master_bytes["eventCards"]
+            if master_bytes is not None
+            else await cache.get_event_cards_bytes(req.server, wl_ver)
+        )
+        event_cards_config_list = build_event_cards_config(
+            {"eventCards": event_cards_bytes}, req.event_id, req.bonus_cards
+        )
+    else:
+        event_cards_config_list = []
 
     runner = functools.partial(
         cal_deck_recommend,
@@ -60,16 +78,16 @@ async def recommend(
         event_cards_config_list=event_cards_config_list,
         require_characters=req.require_characters,
         card_config={rarity: cfg.model_dump() for rarity, cfg in req.card_config.items()},
+        master_generation=generation,
+        master_variant=wl_ver,
+        music_generation=generation,
         engine=engine,
     )
 
     loop = asyncio.get_running_loop()
     start = time.perf_counter()
-    try:
-        decks, durations = await loop.run_in_executor(pool, runner)
-        queue_wait = (time.perf_counter() - start) - sum(durations.values())
-    finally:
-        release_unused_native_memory()
+    decks, durations = await loop.run_in_executor(pool, runner)
+    queue_wait = (time.perf_counter() - start) - sum(durations.values())
 
     return RecommendResponse(decks=decks, durations=durations, queue_wait=queue_wait)
 
