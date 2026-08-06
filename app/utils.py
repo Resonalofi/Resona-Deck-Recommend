@@ -4,14 +4,6 @@ from app.enums import Algorithm, CalTar
 from app.schemas import BonusCards
 
 
-def wl_version(event_id: int | None) -> int:
-    if event_id and event_id > 201:
-        return 3
-    if event_id and event_id > 140:
-        return 2
-    return 1
-
-
 def algorithms(cal_tar: CalTar) -> list[Algorithm]:
     if cal_tar is CalTar.bonus:
         return [Algorithm.dfs]

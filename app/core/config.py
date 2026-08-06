@@ -44,7 +44,6 @@ class Settings(BaseModel):
     auth: AuthSettings
     worker: WorkerSettings = Field(default_factory=WorkerSettings)
     masterdata: dict[Server, MasterdataServer]
-    wl_support: dict[str, FetchSource]
 
     @property
     def host(self) -> str:
@@ -58,11 +57,7 @@ class Settings(BaseModel):
     def resona_secret(self) -> str:
         return self.auth.resona_secret
 
-    def source_for(self, server: Server, key: str, wl_ver: int) -> FetchSource:
-        if key == "worldBloomSupportDeckBonuses" and wl_ver == 1:
-            return self.wl_support["wl1"]
-        if key == "worldBloomSupportDeckBonuses" and wl_ver == 2:
-            return self.wl_support["wl2"]
+    def source_for(self, server: Server, key: str) -> FetchSource:
         if key == "honors":
             return self.masterdata[server]
         if self.masterdata[Server.jp].masterdata_override:

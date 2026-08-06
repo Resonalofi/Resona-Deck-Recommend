@@ -17,10 +17,10 @@ class MasterdataCache:
         return self._generations[server]
 
 
-    async def get_master_bytes(self, server: Server, wl_ver: int) -> dict[str, bytes]:
+    async def get_master_bytes(self, server: Server) -> dict[str, bytes]:
         async with self._lock:
             return {
-                key: await fetch_with_fallback(self._settings.source_for(server, key, wl_ver), key)
+                key: await fetch_with_fallback(self._settings.source_for(server, key), key)
                 for key in REQUIRED_MASTERDATA_KEYS
             }
 
@@ -30,9 +30,9 @@ class MasterdataCache:
             return await fetch_with_fallback(self._settings.musicmeta_source_for(server), "music_metas")
 
 
-    async def get_event_cards_bytes(self, server: Server, wl_ver: int) -> bytes:
+    async def get_event_cards_bytes(self, server: Server) -> bytes:
         async with self._lock:
-            return await fetch_with_fallback(self._settings.source_for(server, "eventCards", wl_ver), "eventCards")
+            return await fetch_with_fallback(self._settings.source_for(server, "eventCards"), "eventCards")
 
 
     async def reload(self, server: Server) -> None:

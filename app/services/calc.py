@@ -16,18 +16,18 @@ from app.schemas import RecommendCard, RecommendDeck
 
 class DeckRecommendEngine:
     def __init__(self) -> None:
-        self._deckers: dict[int, SekaiDeckRecommend] = {}
+        self._decker: SekaiDeckRecommend | None = None
         self._lock = threading.Lock()
-        self._master_generations: dict[tuple[str, int], int] = {}
-        self._music_generations: dict[tuple[str, int], int] = {}
+        self._master_generations: dict[str, int] = {}
+        self._music_generations: dict[str, int] = {}
 
-    def needs_masterdata(self, server: str, variant: int, generation: int) -> bool:
+    def needs_masterdata(self, server: str, generation: int) -> bool:
         with self._lock:
-            return self._master_generations.get((server, variant)) != generation
+            return self._master_generations.get(server) != generation
 
-    def needs_musicmetas(self, server: str, variant: int, generation: int) -> bool:
+    def needs_musicmetas(self, server: str, generation: int) -> bool:
         with self._lock:
-            return self._music_generations.get((server, variant)) != generation
+            return self._music_generations.get(server) != generation
 
 
 def cal_deck_recommend(
@@ -56,7 +56,6 @@ def cal_deck_recommend(
     require_characters: list[int],
     card_config: dict[str, dict],
     master_generation: int = 0,
-    master_variant: int = 1,
     music_generation: int = 0,
     engine: DeckRecommendEngine | None = None,
 ) -> tuple[list[RecommendDeck], dict[str, float]]:
@@ -64,21 +63,21 @@ def cal_deck_recommend(
     decker = SekaiDeckRecommend() if engine is None else None
     with (nullcontext() if engine is None else engine._lock):
         if engine is not None:
-            decker = engine._deckers.get(master_variant)
-            if decker is None:
+            if engine._decker is None:
                 decker = SekaiDeckRecommend()
-                engine._deckers[master_variant] = decker
-            master_key = (server, master_variant)
-            if engine._master_generations.get(master_key) != master_generation:
+                engine._decker = decker
+            else:
+                decker = engine._decker
+            if engine._master_generations.get(server) != master_generation:
                 if master_bytes is None:
                     raise RuntimeError("masterdata payload is required for a new generation")
                 decker.update_masterdata_from_strings(master_bytes, server)
-                engine._master_generations[master_key] = master_generation
-            if engine._music_generations.get(master_key) != music_generation:
+                engine._master_generations[server] = master_generation
+            if engine._music_generations.get(server) != music_generation:
                 if music_metas_bytes is None:
                     raise RuntimeError("music metas payload is required for a new generation")
                 decker.update_musicmetas_from_string(music_metas_bytes, server)
-                engine._music_generations[master_key] = music_generation
+                engine._music_generations[server] = music_generation
         else:
             if master_bytes is None or music_metas_bytes is None:
                 raise RuntimeError("masterdata and music metas payloads are required")

@@ -29,11 +29,3 @@ location = ""
 fallback = [""]
 musicmeta = ""
 musicmeta_fallback = [""]
-
-[wl_support.wl1]
-location = ""
-fallback = []
-
-[wl_support.wl2]
-location = ""
-fallback = []

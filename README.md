@@ -36,4 +36,4 @@ uv run main.py
 
 ### `POST /{server}/cache/reload`
 
-清空该服 masterdata / music_metas 缓存并在下次请求时重新拉取。
+使该服 masterdata / music_metas generation 失效，并在下次请求时重新加载。

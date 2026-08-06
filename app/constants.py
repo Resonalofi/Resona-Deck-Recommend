@@ -23,7 +23,6 @@ REQUIRED_MASTERDATA_KEYS = [
     "skills",
     "worldBloomDifferentAttributeBonuses",
     "worldBlooms",
-    "worldBloomSupportDeckBonuses",
     "worldBloomSupportDeckUnitEventLimitedBonuses",
     "cardMysekaiCanvasBonuses",
     "mysekaiFixtureGameCharacterGroups",

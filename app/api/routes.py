@@ -15,7 +15,7 @@ from app.enums import Server
 from app.services.cache import MasterdataCache
 from app.services.calc import DeckRecommendEngine, cal_deck_recommend
 from app.schemas import RecommendRequest, RecommendResponse, ReloadResponse
-from app.utils import algorithms, build_event_cards_config, wl_version
+from app.utils import algorithms, build_event_cards_config
 
 router = APIRouter(dependencies=[Depends(require_secret)])
 
@@ -28,23 +28,22 @@ async def recommend(
     engine: DeckRecommendEngine = Depends(get_engine),
 ) -> RecommendResponse:
 
-    wl_ver = wl_version(req.event_id)
     generation = cache.generation_for(req.server)
     master_bytes = (
-        await cache.get_master_bytes(req.server, wl_ver)
-        if engine.needs_masterdata(req.server.value, wl_ver, generation)
+        await cache.get_master_bytes(req.server)
+        if engine.needs_masterdata(req.server.value, generation)
         else None
     )
     music_metas_bytes = (
         await cache.get_musicmetas_bytes(req.server)
-        if engine.needs_musicmetas(req.server.value, wl_ver, generation)
+        if engine.needs_musicmetas(req.server.value, generation)
         else None
     )
     if req.bonus_cards and req.bonus_cards.force:
         event_cards_bytes = (
             master_bytes["eventCards"]
             if master_bytes is not None
-            else await cache.get_event_cards_bytes(req.server, wl_ver)
+            else await cache.get_event_cards_bytes(req.server)
         )
         event_cards_config_list = build_event_cards_config(
             {"eventCards": event_cards_bytes}, req.event_id, req.bonus_cards
@@ -79,7 +78,6 @@ async def recommend(
         require_characters=req.require_characters,
         card_config={rarity: cfg.model_dump() for rarity, cfg in req.card_config.items()},
         master_generation=generation,
-        master_variant=wl_ver,
         music_generation=generation,
         engine=engine,
     )
