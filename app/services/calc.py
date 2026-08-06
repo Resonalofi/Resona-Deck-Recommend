@@ -19,6 +19,7 @@ class DeckRecommendEngine:
         self._decker: SekaiDeckRecommend | None = None
         self._lock = threading.Lock()
         self._master_generations: dict[str, int] = {}
+        self._master_source_identities: dict[str, tuple[object, ...]] = {}
         self._music_generations: dict[str, int] = {}
 
     def needs_masterdata(self, server: str, generation: int) -> bool:
@@ -57,6 +58,7 @@ def cal_deck_recommend(
     card_config: dict[str, dict],
     master_generation: int = 0,
     music_generation: int = 0,
+    master_source_identity: tuple[object, ...] | None = None,
     engine: DeckRecommendEngine | None = None,
 ) -> tuple[list[RecommendDeck], dict[str, float]]:
 
@@ -71,8 +73,22 @@ def cal_deck_recommend(
             if engine._master_generations.get(server) != master_generation:
                 if master_bytes is None:
                     raise RuntimeError("masterdata payload is required for a new generation")
-                decker.update_masterdata_from_strings(master_bytes, server)
+                shared_region = None
+                if master_source_identity is not None:
+                    shared_region = next(
+                        (
+                            loaded_server
+                            for loaded_server, loaded_generation in engine._master_generations.items()
+                            if loaded_server != server
+                            and loaded_generation == master_generation
+                            and engine._master_source_identities.get(loaded_server) == master_source_identity
+                        ),
+                        None,
+                    )
+                decker.update_masterdata_from_strings(master_bytes, server, shared_region)
                 engine._master_generations[server] = master_generation
+                if master_source_identity is not None:
+                    engine._master_source_identities[server] = master_source_identity
             if engine._music_generations.get(server) != music_generation:
                 if music_metas_bytes is None:
                     raise RuntimeError("music metas payload is required for a new generation")

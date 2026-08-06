@@ -12,9 +12,22 @@ class MasterdataCache:
         self._settings = settings
         self._lock = asyncio.Lock()
         self._generations: dict[Server, int] = {server: 0 for server in Server}
+        self._next_generation = 0
 
     def generation_for(self, server: Server) -> int:
         return self._generations[server]
+
+    def source_identity_for(self, server: Server) -> tuple[object, ...]:
+        return tuple(
+            (
+                key,
+                source.location,
+                tuple(source.fallback),
+            )
+            for key in REQUIRED_MASTERDATA_KEYS
+            if key != "honors"
+            for source in (self._settings.source_for(server, key),)
+        )
 
 
     async def get_master_bytes(self, server: Server) -> dict[str, bytes]:
@@ -37,4 +50,5 @@ class MasterdataCache:
 
     async def reload(self, server: Server) -> None:
         async with self._lock:
-            self._generations[server] += 1
+            self._next_generation += 1
+            self._generations[server] = self._next_generation

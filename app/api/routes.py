@@ -79,6 +79,7 @@ async def recommend(
         card_config={rarity: cfg.model_dump() for rarity, cfg in req.card_config.items()},
         master_generation=generation,
         music_generation=generation,
+        master_source_identity=cache.source_identity_for(req.server),
         engine=engine,
     )
 
