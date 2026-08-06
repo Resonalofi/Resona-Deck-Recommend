@@ -80,6 +80,7 @@ async def recommend(
         master_generation=generation,
         music_generation=generation,
         master_source_identity=cache.source_identity_for(req.server),
+        music_source_identity=cache.music_source_identity_for(req.server),
         engine=engine,
     )
 

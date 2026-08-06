@@ -21,6 +21,7 @@ class DeckRecommendEngine:
         self._master_generations: dict[str, int] = {}
         self._master_source_identities: dict[str, tuple[object, ...]] = {}
         self._music_generations: dict[str, int] = {}
+        self._music_source_identities: dict[str, tuple[object, ...]] = {}
 
     def needs_masterdata(self, server: str, generation: int) -> bool:
         with self._lock:
@@ -59,6 +60,7 @@ def cal_deck_recommend(
     master_generation: int = 0,
     music_generation: int = 0,
     master_source_identity: tuple[object, ...] | None = None,
+    music_source_identity: tuple[object, ...] | None = None,
     engine: DeckRecommendEngine | None = None,
 ) -> tuple[list[RecommendDeck], dict[str, float]]:
 
@@ -92,8 +94,22 @@ def cal_deck_recommend(
             if engine._music_generations.get(server) != music_generation:
                 if music_metas_bytes is None:
                     raise RuntimeError("music metas payload is required for a new generation")
-                decker.update_musicmetas_from_string(music_metas_bytes, server)
+                shared_region = None
+                if music_source_identity is not None:
+                    shared_region = next(
+                        (
+                            loaded_server
+                            for loaded_server, loaded_generation in engine._music_generations.items()
+                            if loaded_server != server
+                            and loaded_generation == music_generation
+                            and engine._music_source_identities.get(loaded_server) == music_source_identity
+                        ),
+                        None,
+                    )
+                decker.update_musicmetas_from_string(music_metas_bytes, server, shared_region)
                 engine._music_generations[server] = music_generation
+                if music_source_identity is not None:
+                    engine._music_source_identities[server] = music_source_identity
         else:
             if master_bytes is None or music_metas_bytes is None:
                 raise RuntimeError("masterdata and music metas payloads are required")

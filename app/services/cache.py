@@ -29,6 +29,10 @@ class MasterdataCache:
             for source in (self._settings.source_for(server, key),)
         )
 
+    def music_source_identity_for(self, server: Server) -> tuple[object, ...]:
+        source = self._settings.musicmeta_source_for(server)
+        return (source.location, tuple(source.fallback))
+
 
     async def get_master_bytes(self, server: Server) -> dict[str, bytes]:
         async with self._lock:
