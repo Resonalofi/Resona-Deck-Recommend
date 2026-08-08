@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.12, <4.0"
 
 [[package]]
@@ -604,7 +604,7 @@ dependencies = [
     { name = "fastapi" },
     { name = "orjson" },
     { name = "pydantic" },
-    { name = "sekai-deck-recommend-cpp" },
+    { name = "sekai-deck-recommend-cpp-resona" },
     { name = "setproctitle" },
     { name = "uvicorn" },
     { name = "uvloop", marker = "sys_platform != 'win32'" },
@@ -617,42 +617,20 @@ requires-dist = [
     { name = "fastapi", specifier = "==0.115.14" },
     { name = "orjson", specifier = ">=3.10.18" },
     { name = "pydantic", specifier = "==2.11.7" },
-    { name = "sekai-deck-recommend-cpp", specifier = ">=0.2.5" },
+    { name = "sekai-deck-recommend-cpp-resona", specifier = ">=0.3.2" },
     { name = "setproctitle", specifier = ">=1.3.7" },
     { name = "uvicorn", specifier = "==0.35.0" },
     { name = "uvloop", marker = "sys_platform != 'win32'", specifier = ">=0.21.0" },
 ]
 
 [[package]]
-name = "sekai-deck-recommend-cpp"
-version = "0.2.21"
+name = "sekai-deck-recommend-cpp-resona"
+version = "0.3.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/30/d0/4f9092fc8acb07e46050b0e32136d74358c1aee6dd8f55d12db5ddd6263a/sekai_deck_recommend_cpp-0.2.21.tar.gz", hash = "sha256:0da2c43c8880e5e331f3ed055ffc2f7c1a0622ccfe662f9f1dc104def07dbd83", size = 8984183, upload-time = "2025-12-20T08:04:07.864Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/55/bd/b02ac181120f58170c521beedea0cf42c14201300d85e8f04889877a784e/sekai_deck_recommend_cpp_resona-0.3.2.tar.gz", hash = "sha256:8b9f99521db52f00705d31bb3e9025c01ce9f098b31feb282f31db7f46917970", size = 9001381, upload-time = "2026-08-06T15:20:55.277Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2d/46/7dd9f0ea12dde3a1815d63926f39e33c4a708a9215f5d0099fef9b1bacc5/sekai_deck_recommend_cpp-0.2.21-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:4b97fd2f64e55c108d5e415e21edf744f3fb77f551479fd3ae4e02d960537806", size = 389565, upload-time = "2025-12-20T08:03:34.477Z" },
-    { url = "https://files.pythonhosted.org/packages/e2/7b/5ab377dc6d3eba0fc2ea79ba5b0530aa110b9b96bcb7cce4b3d4c8b99c6f/sekai_deck_recommend_cpp-0.2.21-cp312-cp312-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:5b2f24a43ab9586b135defa425d5dc4897cc8b2414e7f7832f72fa1308261b73", size = 434260, upload-time = "2025-12-20T08:03:35.652Z" },
-    { url = "https://files.pythonhosted.org/packages/f2/a9/30c51fbf7e3b4178e3dd2b9250560097859f965d55caadef6133109d1847/sekai_deck_recommend_cpp-0.2.21-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:fc80b662c6f97be1bba5eba2b362db52cbab76e0a5884a12999e790a1d4d3aaf", size = 482213, upload-time = "2025-12-20T08:03:36.784Z" },
-    { url = "https://files.pythonhosted.org/packages/f0/fc/5d1a45fbc1086246c53ef225bb64a7350d80ff13c5a415d12d80d0d08fee/sekai_deck_recommend_cpp-0.2.21-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:3e9bc8a2e674e3f883c75ac7fb40a44c122b0944d3e00c1dea00ef9079adb599", size = 1445267, upload-time = "2025-12-20T08:03:37.997Z" },
-    { url = "https://files.pythonhosted.org/packages/0e/60/1fb6f00538da04a0e0618d5a4c7ebe8f1ffa248b674f1530a1ee513c5bb7/sekai_deck_recommend_cpp-0.2.21-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:81202e9638c796a890806acffa46975f0c0735eb0164873f23b5a44cfd54ed3f", size = 1537293, upload-time = "2025-12-20T08:03:39.543Z" },
-    { url = "https://files.pythonhosted.org/packages/ec/32/d97523031297cb3e8765e9e3e17af485b0813017d324c511632fdb3c66e6/sekai_deck_recommend_cpp-0.2.21-cp312-cp312-win_amd64.whl", hash = "sha256:18a99fc5f2582ff9fd8ebdec45b84b1eb1ec1f37d179e8046f53da1f56e77dec", size = 431418, upload-time = "2025-12-20T08:03:40.922Z" },
-    { url = "https://files.pythonhosted.org/packages/39/d9/e83cab21b210bea50c76d29874d528d823c65d40dda9991c469a7e0a00ed/sekai_deck_recommend_cpp-0.2.21-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:ff4bff57f38a99f21a3d65475d111a3d1ad05eb170b0b5465c66fd2f557bd726", size = 389641, upload-time = "2025-12-20T08:03:42.434Z" },
-    { url = "https://files.pythonhosted.org/packages/2b/ee/ce2558cc228b739bb31ddaf8aef4cdb3b5c40132ff173dce76b8ad08ef8b/sekai_deck_recommend_cpp-0.2.21-cp313-cp313-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:aa916f71e1e4ab2de0059bc82b6462d78bb080e146bd0bd2ad625114d98e965a", size = 434526, upload-time = "2025-12-20T08:03:43.489Z" },
-    { url = "https://files.pythonhosted.org/packages/de/57/d685f8fb21ed20e024d5247762f54c2f509df447b294b21440ee76da926b/sekai_deck_recommend_cpp-0.2.21-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:ddf693670bb785aa2162aa908998813575abb0fc91169078c81034e080fe3c8f", size = 482316, upload-time = "2025-12-20T08:03:44.649Z" },
-    { url = "https://files.pythonhosted.org/packages/db/db/624291889e1d3f88d6ac2c73a6461ae102befe8c392183b66cd10879d190/sekai_deck_recommend_cpp-0.2.21-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:dc5dac6a3a63a95536bd0f98a38decfb2462f7ae8f871e2618e46c843dc38ec2", size = 1445091, upload-time = "2025-12-20T08:03:46.124Z" },
-    { url = "https://files.pythonhosted.org/packages/0b/fa/7e188a57f105c0c8663c0d258011b62e908eef06c1bea991e298fddf50db/sekai_deck_recommend_cpp-0.2.21-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:4430255c32638590d5f05db9333b24d94da4c60387afa101fccc6dc28a04a8ac", size = 1537442, upload-time = "2025-12-20T08:03:47.689Z" },
-    { url = "https://files.pythonhosted.org/packages/3a/9a/c898e98cd751dba1869c7d30b4457a371bd0eac36640d56d961619b850e0/sekai_deck_recommend_cpp-0.2.21-cp313-cp313-win_amd64.whl", hash = "sha256:3ab051c414b72bfb691c32c8473f6f552ad8a833d134284b6b570bd58bf39664", size = 431465, upload-time = "2025-12-20T08:03:49.366Z" },
-    { url = "https://files.pythonhosted.org/packages/5c/d5/d720de1e62dfd523a1fd8c03da3ca48433b77f370e8797321fb82ba5193e/sekai_deck_recommend_cpp-0.2.21-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:f9fad363da43a583bdd8fc1ad83a164db983ed826f27b568a1bafcb075604190", size = 390051, upload-time = "2025-12-20T08:03:50.586Z" },
-    { url = "https://files.pythonhosted.org/packages/40/56/fc595cbc68eb24b802164b29f0650fb70c961480749156629436aaec989c/sekai_deck_recommend_cpp-0.2.21-cp314-cp314-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:9496a79cabe62b9619ece970ba409cbf3d3aff456de06de1a1d9a5fe356b2d9d", size = 435013, upload-time = "2025-12-20T08:03:52.242Z" },
-    { url = "https://files.pythonhosted.org/packages/4f/22/8745c292d54736293d17763fb49b89212fd0d1b22fa8de941e13149dd283/sekai_deck_recommend_cpp-0.2.21-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:fa4e024452af9a0e702125630176fffade5a1c06797b6c554c1e075a1f1e5de0", size = 482464, upload-time = "2025-12-20T08:03:53.407Z" },
-    { url = "https://files.pythonhosted.org/packages/5f/b1/15696a2aecb618977f109943f132e165f7ab9220ed5ddba160a1c1142a69/sekai_deck_recommend_cpp-0.2.21-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:ef62d01a084e9682a6c60bac8ac8f594ed3035999d66bc6cced2901b16eca818", size = 1445779, upload-time = "2025-12-20T08:03:54.577Z" },
-    { url = "https://files.pythonhosted.org/packages/57/a2/ba46995c1110ceeb979c7e5ae6351333ecbfc08ec3dd1d609781d840460b/sekai_deck_recommend_cpp-0.2.21-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:19a2022b0f9d70513c605e50303fa7c7ec84d80f2cbef688210e741119b41625", size = 1537542, upload-time = "2025-12-20T08:03:55.876Z" },
-    { url = "https://files.pythonhosted.org/packages/c5/7d/312cde59c802b59edbf5a756168cd14b8f0f7dfe9f96b27afe1dd04e5115/sekai_deck_recommend_cpp-0.2.21-cp314-cp314-win_amd64.whl", hash = "sha256:316144f443e316626535a3ddfac36ef754c3e184915d3ca5ee2b0ce21023ca5b", size = 446040, upload-time = "2025-12-20T08:03:57.122Z" },
-    { url = "https://files.pythonhosted.org/packages/c0/bb/1771f7ecfd8422bd8c09e1ea4d2a9b7336e9373d4c86afa227336d17f765/sekai_deck_recommend_cpp-0.2.21-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:294878a125d61f2b9c99a7b27dad9fb6ab0edde18481cecdb72c4a5450752286", size = 401832, upload-time = "2025-12-20T08:03:58.535Z" },
-    { url = "https://files.pythonhosted.org/packages/2d/8d/2b0c2ee553d49bd6cbf3f1574237ee7ae7086b4814493033c671e615a961/sekai_deck_recommend_cpp-0.2.21-cp314-cp314t-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:c7f73c51a091d1cad16654fc0552d0b817177cfbfd46511c83793d0211905c0e", size = 434487, upload-time = "2025-12-20T08:03:59.656Z" },
-    { url = "https://files.pythonhosted.org/packages/48/35/67d081f4e2e257c5d44bdc82714dad71d780c3b1a7d1d7ceca275261a389/sekai_deck_recommend_cpp-0.2.21-cp314-cp314t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:775b21273f3af3e56337029eaea2656e033e91f10569bff7f695a9386f4c9be9", size = 482468, upload-time = "2025-12-20T08:04:00.806Z" },
-    { url = "https://files.pythonhosted.org/packages/52/da/df52fcbba5dc9447001ef7b3d5ab1dae8c8fb36cfe974ec4ce0773cc0130/sekai_deck_recommend_cpp-0.2.21-cp314-cp314t-musllinux_1_2_aarch64.whl", hash = "sha256:277f7896c51de95d15ad266400eb2ea89a04f40c4aed3dfa9101a23e0dc2c738", size = 1447359, upload-time = "2025-12-20T08:04:03.323Z" },
-    { url = "https://files.pythonhosted.org/packages/9b/c9/f9383d65e76f8a6f2dc063b963c4da383ce41a4a0dbf35e08d7400748b02/sekai_deck_recommend_cpp-0.2.21-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:64dc426e0dfb6fe83c80fb7d446e3dc3cfa1c0cdb187a7262f2a67679a2bdc31", size = 1538999, upload-time = "2025-12-20T08:04:04.991Z" },
-    { url = "https://files.pythonhosted.org/packages/e5/bc/726c68401cd43714942605ab336b500bad825707ae4fae67ba1fc3eef425/sekai_deck_recommend_cpp-0.2.21-cp314-cp314t-win_amd64.whl", hash = "sha256:e2d0a03c7ffaf1378dffcc0fb95f1eeaf671cb8ad4fa1a97bf883125062b4e48", size = 461757, upload-time = "2025-12-20T08:04:06.385Z" },
+    { url = "https://files.pythonhosted.org/packages/29/d7/9289b37a6e83a248ef29cf76c06e7383252b8e37e64fb78485521f160675/sekai_deck_recommend_cpp_resona-0.3.2-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:f0bddb088952dd669f8d7269ab1182ee235e87fe47f46ef13d5bb0bad88374ea", size = 524476, upload-time = "2026-08-06T15:20:52.075Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/a8/98a590c99ad98bf2de18d98a814cd37ebe2045e6df3c048528105bc33ad3/sekai_deck_recommend_cpp_resona-0.3.2-cp312-cp312-win_amd64.whl", hash = "sha256:5978aadab0d390dca1dfd08f8e27fd8e613d51c38701a37116a4bd86e9f2fe1a", size = 652531, upload-time = "2026-08-06T15:20:53.669Z" },
 ]
 
 [[package]]
