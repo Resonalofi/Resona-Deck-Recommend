@@ -617,7 +617,7 @@ requires-dist = [
     { name = "fastapi", specifier = "==0.115.14" },
     { name = "orjson", specifier = ">=3.10.18" },
     { name = "pydantic", specifier = "==2.11.7" },
-    { name = "sekai-deck-recommend-cpp-resona", specifier = ">=0.3.2" },
+    { name = "sekai-deck-recommend-cpp-resona", specifier = ">=0.3.5" },
     { name = "setproctitle", specifier = ">=1.3.7" },
     { name = "uvicorn", specifier = "==0.35.0" },
     { name = "uvloop", marker = "sys_platform != 'win32'", specifier = ">=0.21.0" },
@@ -625,12 +625,12 @@ requires-dist = [
 
 [[package]]
 name = "sekai-deck-recommend-cpp-resona"
-version = "0.3.2"
+version = "0.3.5"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/55/bd/b02ac181120f58170c521beedea0cf42c14201300d85e8f04889877a784e/sekai_deck_recommend_cpp_resona-0.3.2.tar.gz", hash = "sha256:8b9f99521db52f00705d31bb3e9025c01ce9f098b31feb282f31db7f46917970", size = 9001381, upload-time = "2026-08-06T15:20:55.277Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/95/ab/02ec3fdd312ce393bc2b2df889749c2363979366e65fefbe2126536cfe79/sekai_deck_recommend_cpp_resona-0.3.5.tar.gz", hash = "sha256:b65e22b3b155d6b9364653b60a3583a37b49f4b6571080d70219e3160ad0d20c", size = 9008859, upload-time = "2026-08-11T09:15:36.204Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/29/d7/9289b37a6e83a248ef29cf76c06e7383252b8e37e64fb78485521f160675/sekai_deck_recommend_cpp_resona-0.3.2-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:f0bddb088952dd669f8d7269ab1182ee235e87fe47f46ef13d5bb0bad88374ea", size = 524476, upload-time = "2026-08-06T15:20:52.075Z" },
-    { url = "https://files.pythonhosted.org/packages/6a/a8/98a590c99ad98bf2de18d98a814cd37ebe2045e6df3c048528105bc33ad3/sekai_deck_recommend_cpp_resona-0.3.2-cp312-cp312-win_amd64.whl", hash = "sha256:5978aadab0d390dca1dfd08f8e27fd8e613d51c38701a37116a4bd86e9f2fe1a", size = 652531, upload-time = "2026-08-06T15:20:53.669Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/aa/d7922c361b9d65e0b84ac85182a6840e62036a75565551b5520c282f3748/sekai_deck_recommend_cpp_resona-0.3.5-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:4f9ec21fe33a457b74f08d4cd40a02e9346cbefcb9c71031b694f92d11488260", size = 550826, upload-time = "2026-08-11T09:15:33.472Z" },
+    { url = "https://files.pythonhosted.org/packages/7b/31/ff3b554530a6885db0a69a62b081f8f16b179ec7054239f83cb84d93ba72/sekai_deck_recommend_cpp_resona-0.3.5-cp312-cp312-win_amd64.whl", hash = "sha256:d3c387916af8ac8277281912418ccbeedd0748e9c451603e143c8dbfd971327d", size = 660920, upload-time = "2026-08-11T09:15:34.787Z" },
 ]
 
 [[package]]

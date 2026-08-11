@@ -1,4 +1,3 @@
-import time
 import threading
 from contextlib import nullcontext
 from typing import Optional
@@ -62,7 +61,7 @@ def cal_deck_recommend(
     master_source_identity: tuple[object, ...] | None = None,
     music_source_identity: tuple[object, ...] | None = None,
     engine: DeckRecommendEngine | None = None,
-) -> tuple[list[RecommendDeck], dict[str, float]]:
+) -> tuple[list[RecommendDeck], dict[str, float], float]:
 
     decker = SekaiDeckRecommend() if engine is None else None
     with (nullcontext() if engine is None else engine._lock):
@@ -164,27 +163,12 @@ def cal_deck_recommend(
             options.event_attr = event_attr
             options.event_unit = event_unit
 
-        durations: dict[str, float] = {}
-        result_list = []
+        options.algorithms = alg_list
+        options.parallel_algorithms = len(alg_list) > 1
+        result = decker.recommend(options)
 
-        for alg in alg_list:
-            options.algorithm = alg
-            start_time = time.perf_counter()
-            result = decker.recommend(options)
-            durations[alg] = time.perf_counter() - start_time
-            result_list.append((alg, result))
-
-    # 合并去重，记录每个卡组来自哪些算法
-    decks = []
-    sources_map: dict[str, str] = {}
-    for alg, result in result_list:
-        for deck in result.decks:
-            key = f"{deck.total_power}_{deck.score}_{deck.cards[0].card_id}"
-            if key not in sources_map:
-                sources_map[key] = alg
-                decks.append(deck)
-            else:
-                sources_map[key] += f"+{alg}"
+    durations = {alg: ms / 1000 for alg, ms in result.algorithm_ms.items()}
+    engine_seconds = result.total_ms / 1000
 
     def deck_key(deck):
         if cal_tar == "power":
@@ -195,7 +179,7 @@ def cal_deck_recommend(
             return (deck.event_bonus_rate, deck.score)
         return (deck.score, deck.multi_live_score_up)
 
-    decks.sort(key=deck_key, reverse=True)
+    decks = sorted(result.decks, key=deck_key, reverse=True)
 
     return [
         RecommendDeck(
@@ -215,7 +199,7 @@ def cal_deck_recommend(
             ],
             event_bonus_rate=deck.event_bonus_rate,
             support_deck_bonus_rate=deck.support_deck_bonus_rate,
-            source=sources_map[f"{deck.total_power}_{deck.score}_{deck.cards[0].card_id}"],
+            source="+".join(deck.algorithms),
         )
         for deck in decks[:6]
-    ], durations
+    ], durations, engine_seconds

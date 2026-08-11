@@ -86,8 +86,8 @@ async def recommend(
 
     loop = asyncio.get_running_loop()
     start = time.perf_counter()
-    decks, durations = await loop.run_in_executor(pool, runner)
-    queue_wait = (time.perf_counter() - start) - sum(durations.values())
+    decks, durations, engine_seconds = await loop.run_in_executor(pool, runner)
+    queue_wait = (time.perf_counter() - start) - engine_seconds
 
     return RecommendResponse(decks=decks, durations=durations, queue_wait=queue_wait)
 
