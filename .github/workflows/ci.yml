@@ -1,0 +1,142 @@
+name: Native service CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+env:
+  CORE_REF: 129683f5e1ecacd6660004d0d4fd8dc00f5302d7
+
+concurrency:
+  group: native-service-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout service
+        uses: actions/checkout@v4
+        with:
+          path: service
+
+      - name: Checkout native core
+        uses: actions/checkout@v4
+        with:
+          repository: Resonalofi/sekai-deck-recommend-cpp
+          ref: ${{ env.CORE_REF }}
+          submodules: recursive
+          path: core
+
+      - name: Install native dependencies
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev ninja-build
+
+      - name: Configure
+        run: >-
+          cmake -S service -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DSEKAI_DECK_RECOMMEND_SOURCE_DIR=${{ github.workspace }}/core
+          -DRESONA_DECK_RECOMMEND_BUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build build --parallel 2
+
+      - name: Package Linux program
+        run: |
+          mkdir -p package
+          cp build/resona-deck-recommend package/
+          cp -R build/data package/
+          tar -czf resona-deck-recommend-linux-x86_64.tar.gz -C package .
+
+      - name: Upload Linux program
+        uses: actions/upload-artifact@v4
+        with:
+          name: resona-deck-recommend-linux-x86_64
+          path: resona-deck-recommend-linux-x86_64.tar.gz
+          if-no-files-found: error
+
+  build-windows:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout service
+        uses: actions/checkout@v4
+        with:
+          path: service
+
+      - name: Checkout native core
+        uses: actions/checkout@v4
+        with:
+          repository: Resonalofi/sekai-deck-recommend-cpp
+          ref: ${{ env.CORE_REF }}
+          submodules: recursive
+          path: core
+
+      - name: Configure Windows build
+        run: >-
+          cmake -S service -B build -DSEKAI_DECK_RECOMMEND_SOURCE_DIR=${{ github.workspace }}/core
+
+      - name: Build Windows program
+        run: cmake --build build --config Release --parallel
+
+      - name: Package Windows program
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force package | Out-Null
+          Copy-Item build/Release/resona-deck-recommend.exe package/
+          Copy-Item -Recurse build/Release/data package/
+          Compress-Archive -Path package/* -DestinationPath resona-deck-recommend-windows-x86_64.zip
+
+      - name: Upload Windows program
+        uses: actions/upload-artifact@v4
+        with:
+          name: resona-deck-recommend-windows-x86_64
+          path: resona-deck-recommend-windows-x86_64.zip
+          if-no-files-found: error
+
+  build-macos:
+    runs-on: macos-14
+    steps:
+      - name: Checkout service
+        uses: actions/checkout@v4
+        with:
+          path: service
+
+      - name: Checkout native core
+        uses: actions/checkout@v4
+        with:
+          repository: Resonalofi/sekai-deck-recommend-cpp
+          ref: ${{ env.CORE_REF }}
+          submodules: recursive
+          path: core
+
+      - name: Install build dependencies
+        run: brew install ninja openssl@3
+
+      - name: Configure macOS build
+        run: >-
+          cmake -S service -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DSEKAI_DECK_RECOMMEND_SOURCE_DIR=${{ github.workspace }}/core
+          -DOPENSSL_ROOT_DIR=$(brew --prefix openssl@3)
+
+      - name: Build macOS program
+        run: cmake --build build --parallel 3
+
+      - name: Package macOS program
+        run: |
+          mkdir -p package
+          cp build/resona-deck-recommend package/
+          cp -R build/data package/
+          tar -czf resona-deck-recommend-macos-arm64.tar.gz -C package .
+
+      - name: Upload macOS program
+        uses: actions/upload-artifact@v4
+        with:
+          name: resona-deck-recommend-macos-arm64
+          path: resona-deck-recommend-macos-arm64.tar.gz
+          if-no-files-found: error

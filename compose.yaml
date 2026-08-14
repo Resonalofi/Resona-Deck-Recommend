@@ -1,0 +1,22 @@
+services:
+  deck-recommend:
+    image: ${RESONA_DECK_IMAGE:-ghcr.io/resonalofi/resona-deck-recommend:latest}
+    build:
+      context: .
+      additional_contexts:
+        core: ../sekai-deck-recommend-cpp
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:23457:23457"
+    volumes:
+      - ./config.docker.toml:/etc/resona-deck-recommend/config.toml:ro
+      - resona-deck-data:/var/lib/resona-deck-recommend
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+
+volumes:
+  resona-deck-data:

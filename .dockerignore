@@ -1,0 +1,11 @@
+.git
+.github
+.venv
+build
+config.toml
+tests
+README.md
+compose.yaml
+config.docker.example.toml
+*.pyc
+__pycache__

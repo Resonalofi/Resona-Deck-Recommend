@@ -1,5 +1,5 @@
 [runtime]
-host = "127.0.0.1"
+host = "0.0.0.0"
 port = 23457
 
 [auth]
@@ -12,19 +12,28 @@ wl_timeout_ms = 12000
 
 [masterdata.jp]
 location = ""
-fallback = [""]
+fallback = [
+  "",
+  "",
+]
 musicmeta = ""
 musicmeta_fallback = [""]
 masterdata_override = true
 
 [masterdata.cn]
-location = ""
-fallback = [""]
+location = "masterdata/cn"
+fallback = [
+  "",
+  "",
+]
 musicmeta = ""
 musicmeta_fallback = [""]
 
 [masterdata.tw]
 location = ""
-fallback = [""]
+fallback = [
+  "",
+  "",
+]
 musicmeta = ""
 musicmeta_fallback = [""]

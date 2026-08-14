@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .cache/
 config.toml
+build/
 
 # vscode
 .vscode
