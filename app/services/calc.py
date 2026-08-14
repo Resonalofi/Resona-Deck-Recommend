@@ -156,7 +156,8 @@ def cal_deck_recommend(
             options.fixed_characters = None
         elif force_wl:
             options.event_id = event_id
-            options.world_bloom_character_id = world_bloom_character_id
+            if world_bloom_character_id:
+                options.world_bloom_character_id = world_bloom_character_id
             options.timeout_ms = wl_timeout_ms
         else:
             options.event_id = event_id
