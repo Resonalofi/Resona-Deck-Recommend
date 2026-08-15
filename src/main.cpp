@@ -66,6 +66,10 @@ int main(int argc, char** argv) {
         const auto httpThreads = std::max<std::size_t>(4, settings.poolSize * 4);
         server.new_task_queue = [httpThreads] { return new httplib::ThreadPool(httpThreads); };
 
+        server.Get("/healthz", [](const httplib::Request&, httplib::Response& response) {
+            response.set_content("ok", "text/plain");
+        });
+
         server.Post("/deck/recommend", [&](const httplib::Request& request, httplib::Response& response) {
             if (!authorize(request, response, settings))
                 return;

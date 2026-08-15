@@ -1,0 +1,252 @@
+name: Publish Docker Image
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: native-service-docker-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux/amd64
+          - runner: ubuntu-24.04-arm
+            platform: linux/arm64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Init nlohmann/json
+        shell: bash
+        run: git submodule update --init sekai-deck-recommend-cpp/3rdparty/json
+
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
+          echo "REGISTRY_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=deck-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=deck-${{ matrix.platform }}
+
+      - name: Export digest
+        run: |
+          mkdir -p "${{ runner.temp }}/digests"
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    name: Merge multi-arch manifest
+    runs-on: ubuntu-24.04
+    needs: build
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Image name
+        run: echo "REGISTRY_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+
+      - name: Inspect image
+        run: docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
+
+  deploy:
+    name: Deploy Docker Container
+    runs-on: ubuntu-24.04
+    needs: merge
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: ${{ vars.DEPLOY_URL }}
+    steps:
+      - name: Validate SSH secrets
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          test -n "${DEPLOY_HOST}" || (echo "DEPLOY_HOST is required" && exit 1)
+          test -n "${DEPLOY_USER}" || (echo "DEPLOY_USER is required" && exit 1)
+          test -n "${DEPLOY_SSH_KEY}" || (echo "DEPLOY_SSH_KEY is required" && exit 1)
+
+      - name: Checkout deploy files
+        uses: actions/checkout@v4
+
+      - name: Bootstrap deploy directory
+        uses: appleboy/ssh-action@v1
+        env:
+          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR || '/opt/Resona-Deck-Recommend' }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          envs: DEPLOY_DIR
+          script: |
+            set -euo pipefail
+
+            DEPLOY_OWNER="$(id -un)"
+            DEPLOY_GROUP="$(id -gn)"
+
+            if [ ! -d "${DEPLOY_DIR}" ]; then
+              echo "=== Creating deploy directory ==="
+              if ! mkdir -p "${DEPLOY_DIR}" 2>/dev/null; then
+                sudo mkdir -p "${DEPLOY_DIR}"
+              fi
+            fi
+            if [ ! -w "${DEPLOY_DIR}" ]; then
+              sudo chown "${DEPLOY_OWNER}:${DEPLOY_GROUP}" "${DEPLOY_DIR}"
+            fi
+
+      - name: Upload compose files
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          source: compose.yaml,config.docker.example.toml
+          target: ${{ secrets.DEPLOY_DIR || '/opt/Resona-Deck-Recommend' }}
+
+      - name: Restart container on server
+        uses: appleboy/ssh-action@v1
+        env:
+          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR || '/opt/Resona-Deck-Recommend' }}
+          CONFIG_TOML: ${{ secrets.CONFIG_TOML }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          envs: DEPLOY_DIR,CONFIG_TOML,GHCR_USERNAME,GHCR_TOKEN
+          script: |
+            set -euo pipefail
+
+            cd "${DEPLOY_DIR}"
+
+            if [ ! -f compose.yaml ]; then
+              echo "compose.yaml was not found after upload."
+              exit 1
+            fi
+
+            if [ ! -f config.docker.toml ]; then
+              if [ -n "${CONFIG_TOML:-}" ]; then
+                echo "=== Writing config.docker.toml from CONFIG_TOML secret ==="
+                umask 077
+                printf '%s\n' "${CONFIG_TOML}" > config.docker.toml
+              else
+                cp config.docker.example.toml config.docker.toml
+                echo "config.docker.toml was created from config.docker.example.toml. Fill it on the server or add a CONFIG_TOML GitHub secret, then rerun this workflow."
+                exit 1
+              fi
+            elif [ -n "${CONFIG_TOML:-}" ]; then
+              echo "=== Refreshing config.docker.toml from CONFIG_TOML secret ==="
+              umask 077
+              printf '%s\n' "${CONFIG_TOML}" > config.docker.toml
+            fi
+
+            if ! command -v docker >/dev/null 2>&1; then
+              echo "Docker is not installed on the server."
+              exit 1
+            fi
+
+            if [ -n "${GHCR_USERNAME:-}" ] && [ -n "${GHCR_TOKEN:-}" ]; then
+              echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USERNAME}" --password-stdin
+            fi
+
+            docker compose pull deck-recommend
+            docker compose up -d --no-build deck-recommend
+
+            for i in $(seq 1 60); do
+              if curl -fsS http://127.0.0.1:23457/healthz; then
+                exit 0
+              fi
+              sleep 5
+            done
+
+            docker compose ps
+            docker compose logs --tail=100 deck-recommend
+            exit 1

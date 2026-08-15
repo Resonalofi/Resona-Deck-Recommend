@@ -9,9 +9,6 @@ on:
 permissions:
   contents: read
 
-env:
-  CORE_REF: 129683f5e1ecacd6660004d0d4fd8dc00f5302d7
-
 concurrency:
   group: native-service-ci-${{ github.ref }}
   cancel-in-progress: true
@@ -20,28 +17,20 @@ jobs:
   build-linux:
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout service
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          path: service
+          submodules: true
 
-      - name: Checkout native core
-        uses: actions/checkout@v4
-        with:
-          repository: Resonalofi/sekai-deck-recommend-cpp
-          ref: ${{ env.CORE_REF }}
-          submodules: recursive
-          path: core
+      - name: Init nlohmann/json
+        shell: bash
+        run: git submodule update --init sekai-deck-recommend-cpp/3rdparty/json
 
       - name: Install native dependencies
         run: sudo apt-get update && sudo apt-get install -y libssl-dev ninja-build
 
       - name: Configure
-        run: >-
-          cmake -S service -B build -G Ninja
-          -DCMAKE_BUILD_TYPE=Release
-          -DSEKAI_DECK_RECOMMEND_SOURCE_DIR=${{ github.workspace }}/core
-          -DRESONA_DECK_RECOMMEND_BUILD_TESTS=ON
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
         run: cmake --build build --parallel 2
@@ -63,22 +52,17 @@ jobs:
   build-windows:
     runs-on: windows-2022
     steps:
-      - name: Checkout service
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          path: service
+          submodules: true
 
-      - name: Checkout native core
-        uses: actions/checkout@v4
-        with:
-          repository: Resonalofi/sekai-deck-recommend-cpp
-          ref: ${{ env.CORE_REF }}
-          submodules: recursive
-          path: core
+      - name: Init nlohmann/json
+        shell: bash
+        run: git submodule update --init sekai-deck-recommend-cpp/3rdparty/json
 
       - name: Configure Windows build
-        run: >-
-          cmake -S service -B build -DSEKAI_DECK_RECOMMEND_SOURCE_DIR=${{ github.workspace }}/core
+        run: cmake -S . -B build
 
       - name: Build Windows program
         run: cmake --build build --config Release --parallel
@@ -101,27 +85,22 @@ jobs:
   build-macos:
     runs-on: macos-14
     steps:
-      - name: Checkout service
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          path: service
+          submodules: true
 
-      - name: Checkout native core
-        uses: actions/checkout@v4
-        with:
-          repository: Resonalofi/sekai-deck-recommend-cpp
-          ref: ${{ env.CORE_REF }}
-          submodules: recursive
-          path: core
+      - name: Init nlohmann/json
+        shell: bash
+        run: git submodule update --init sekai-deck-recommend-cpp/3rdparty/json
 
       - name: Install build dependencies
         run: brew install ninja openssl@3
 
       - name: Configure macOS build
         run: >-
-          cmake -S service -B build -G Ninja
+          cmake -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=Release
-          -DSEKAI_DECK_RECOMMEND_SOURCE_DIR=${{ github.workspace }}/core
           -DOPENSSL_ROOT_DIR=$(brew --prefix openssl@3)
 
       - name: Build macOS program

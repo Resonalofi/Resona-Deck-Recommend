@@ -1,0 +1,3 @@
+[submodule "sekai-deck-recommend-cpp"]
+	path = sekai-deck-recommend-cpp
+	url = https://github.com/Resonalofi/sekai-deck-recommend-cpp.git

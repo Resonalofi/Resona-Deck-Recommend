@@ -13,11 +13,9 @@ RUN apt-get update \
 
 WORKDIR /src
 COPY . /src/service
-COPY --from=core . /src/core
 
 RUN cmake -S /src/service -B /src/build -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
-        -DSEKAI_DECK_RECOMMEND_SOURCE_DIR=/src/core \
     && cmake --build /src/build --parallel "$(nproc)" \
     && strip /src/build/resona-deck-recommend \
     && install -d -o 65532 -g 65532 /runtime/var/lib/resona-deck-recommend
@@ -25,7 +23,7 @@ RUN cmake -S /src/service -B /src/build -G Ninja \
 FROM gcr.io/distroless/cc-debian12:nonroot@sha256:adcd20c7b4c988b73cbfbddb26d2eee574571e6d7c9ffea29b3821e0690efb77 AS runtime
 
 COPY --from=build /src/build/resona-deck-recommend /usr/local/bin/resona-deck-recommend
-COPY --from=build /src/core/data /usr/local/share/resona-deck-recommend
+COPY --from=build /src/service/sekai-deck-recommend-cpp/data /usr/local/share/resona-deck-recommend
 COPY --from=build --chown=65532:65532 /runtime/var/lib/resona-deck-recommend /var/lib/resona-deck-recommend
 
 WORKDIR /var/lib/resona-deck-recommend

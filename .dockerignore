@@ -3,7 +3,6 @@
 .venv
 build
 config.toml
-tests
 README.md
 compose.yaml
 config.docker.example.toml

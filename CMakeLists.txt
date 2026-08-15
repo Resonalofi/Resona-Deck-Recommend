@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.20)
 
 project(resona-deck-recommend VERSION 2.0.0 LANGUAGES CXX)
 
-option(RESONA_DECK_RECOMMEND_BUILD_TESTS "Build native contract test tools" OFF)
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -11,17 +9,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(FetchContent)
 include(GNUInstallDirs)
 
-set(SEKAI_DECK_RECOMMEND_SOURCE_DIR "" CACHE PATH
-    "Path to the sekai-deck-recommend-cpp source tree")
-
-if (NOT SEKAI_DECK_RECOMMEND_SOURCE_DIR)
-    get_filename_component(SEKAI_DECK_RECOMMEND_SOURCE_DIR
-        "${CMAKE_CURRENT_SOURCE_DIR}/../sekai-deck-recommend-cpp" ABSOLUTE)
-endif()
+set(SEKAI_DECK_RECOMMEND_SOURCE_DIR
+    "${CMAKE_CURRENT_SOURCE_DIR}/sekai-deck-recommend-cpp"
+    CACHE PATH "Path to the sekai-deck-recommend-cpp source tree")
 
 if (NOT EXISTS "${SEKAI_DECK_RECOMMEND_SOURCE_DIR}/CMakeLists.txt")
     message(FATAL_ERROR
-        "SEKAI_DECK_RECOMMEND_SOURCE_DIR must point to sekai-deck-recommend-cpp")
+        "sekai-deck-recommend-cpp is missing; run git submodule update --init && git submodule update --init sekai-deck-recommend-cpp/3rdparty/json")
 endif()
 
 set(SEKAI_DECK_RECOMMEND_BUILD_PYTHON OFF CACHE BOOL "" FORCE)
@@ -102,13 +96,3 @@ install(DIRECTORY "${SEKAI_DECK_RECOMMEND_SOURCE_DIR}/data/"
     DESTINATION "${CMAKE_INSTALL_DATADIR}/resona-deck-recommend")
 install(FILES config.example.toml
     DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/resona-deck-recommend")
-
-if (RESONA_DECK_RECOMMEND_BUILD_TESTS)
-    add_executable(resona-native-core-runner tests/native_core_runner.cpp)
-    target_link_libraries(resona-native-core-runner PRIVATE SekaiDeckRecommend::Core)
-    if (MSVC)
-        target_compile_options(resona-native-core-runner PRIVATE /W4 /utf-8)
-    else()
-        target_compile_options(resona-native-core-runner PRIVATE -Wall -Wextra -Wpedantic)
-    endif()
-endif()

@@ -9,9 +9,6 @@ on:
 permissions:
   contents: read
 
-env:
-  CORE_REF: 129683f5e1ecacd6660004d0d4fd8dc00f5302d7
-
 concurrency:
   group: native-service-release-${{ github.ref }}
   cancel-in-progress: false
@@ -20,27 +17,20 @@ jobs:
   build-linux:
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout service
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          path: service
+          submodules: true
 
-      - name: Checkout native core
-        uses: actions/checkout@v4
-        with:
-          repository: Resonalofi/sekai-deck-recommend-cpp
-          ref: ${{ env.CORE_REF }}
-          submodules: recursive
-          path: core
+      - name: Init nlohmann/json
+        shell: bash
+        run: git submodule update --init sekai-deck-recommend-cpp/3rdparty/json
 
       - name: Install native dependencies
         run: sudo apt-get update && sudo apt-get install -y libssl-dev ninja-build
 
       - name: Configure release candidate
-        run: >-
-          cmake -S service -B build -G Ninja
-          -DCMAKE_BUILD_TYPE=Release
-          -DSEKAI_DECK_RECOMMEND_SOURCE_DIR=${{ github.workspace }}/core
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
       - name: Build release candidate
         run: cmake --build build --parallel 2
@@ -62,23 +52,17 @@ jobs:
   build-windows:
     runs-on: windows-2022
     steps:
-      - name: Checkout service
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          path: service
+          submodules: true
 
-      - name: Checkout native core
-        uses: actions/checkout@v4
-        with:
-          repository: Resonalofi/sekai-deck-recommend-cpp
-          ref: ${{ env.CORE_REF }}
-          submodules: recursive
-          path: core
+      - name: Init nlohmann/json
+        shell: bash
+        run: git submodule update --init sekai-deck-recommend-cpp/3rdparty/json
 
       - name: Configure Windows build
-        run: >-
-          cmake -S service -B build
-          -DSEKAI_DECK_RECOMMEND_SOURCE_DIR=${{ github.workspace }}/core
+        run: cmake -S . -B build
 
       - name: Build Windows release program
         run: cmake --build build --config Release --parallel
@@ -101,27 +85,22 @@ jobs:
   build-macos:
     runs-on: macos-14
     steps:
-      - name: Checkout service
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          path: service
+          submodules: true
 
-      - name: Checkout native core
-        uses: actions/checkout@v4
-        with:
-          repository: Resonalofi/sekai-deck-recommend-cpp
-          ref: ${{ env.CORE_REF }}
-          submodules: recursive
-          path: core
+      - name: Init nlohmann/json
+        shell: bash
+        run: git submodule update --init sekai-deck-recommend-cpp/3rdparty/json
 
       - name: Install build dependencies
         run: brew install ninja openssl@3
 
       - name: Configure macOS build
         run: >-
-          cmake -S service -B build -G Ninja
+          cmake -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=Release
-          -DSEKAI_DECK_RECOMMEND_SOURCE_DIR=${{ github.workspace }}/core
           -DOPENSSL_ROOT_DIR=$(brew --prefix openssl@3)
 
       - name: Build macOS release program
@@ -140,3 +119,47 @@ jobs:
           name: resona-deck-recommend-macos-arm64-${{ github.ref_name }}
           path: resona-deck-recommend-macos-arm64-${{ github.ref_name }}.tar.gz
           if-no-files-found: error
+
+  create-release:
+    name: Create GitHub Release
+    needs: [build-linux, build-windows, build-macos]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read core gitlink
+        id: core
+        run: echo "ref=$(git rev-parse :sekai-deck-recommend-cpp)" >> "$GITHUB_OUTPUT"
+
+      - name: Download release programs
+        uses: actions/download-artifact@v4
+        with:
+          path: release-files
+          pattern: resona-deck-recommend-*
+          merge-multiple: true
+
+      - name: Generate checksums
+        working-directory: release-files
+        run: sha256sum * > SHA256SUMS
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            ## Downloads
+
+            - **Linux x86_64**: `resona-deck-recommend-linux-x86_64-${{ github.ref_name }}.tar.gz`
+            - **Windows x86_64**: `resona-deck-recommend-windows-x86_64-${{ github.ref_name }}.zip`
+            - **macOS arm64**: `resona-deck-recommend-macos-arm64-${{ github.ref_name }}.tar.gz`
+
+            ## Native core
+
+            Built against [`Resonalofi/sekai-deck-recommend-cpp@${{ steps.core.outputs.ref }}`](https://github.com/Resonalofi/sekai-deck-recommend-cpp/commit/${{ steps.core.outputs.ref }}).
+          files: |
+            release-files/resona-deck-recommend-*
+            release-files/SHA256SUMS

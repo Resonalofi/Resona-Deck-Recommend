@@ -3,8 +3,6 @@ services:
     image: ${RESONA_DECK_IMAGE:-ghcr.io/resonalofi/resona-deck-recommend:latest}
     build:
       context: .
-      additional_contexts:
-        core: ../sekai-deck-recommend-cpp
     restart: unless-stopped
     ports:
       - "127.0.0.1:23457:23457"
