@@ -43,7 +43,7 @@ jobs:
           tar -czf resona-deck-recommend-linux-x86_64-${{ github.ref_name }}.tar.gz -C package .
 
       - name: Upload Linux release program
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: resona-deck-recommend-linux-x86_64-${{ github.ref_name }}
           path: resona-deck-recommend-linux-x86_64-${{ github.ref_name }}.tar.gz
@@ -76,7 +76,7 @@ jobs:
           Compress-Archive -Path package/* -DestinationPath resona-deck-recommend-windows-x86_64-${{ github.ref_name }}.zip
 
       - name: Upload Windows release program
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: resona-deck-recommend-windows-x86_64-${{ github.ref_name }}
           path: resona-deck-recommend-windows-x86_64-${{ github.ref_name }}.zip
@@ -114,7 +114,7 @@ jobs:
           tar -czf resona-deck-recommend-macos-arm64-${{ github.ref_name }}.tar.gz -C package .
 
       - name: Upload macOS release program
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: resona-deck-recommend-macos-arm64-${{ github.ref_name }}
           path: resona-deck-recommend-macos-arm64-${{ github.ref_name }}.tar.gz
