@@ -4,6 +4,8 @@
 
 #include <algorithm>
 #include <chrono>
+#include <ctime>
+#include <iomanip>
 #include <iostream>
 #include <cctype>
 #include <limits>
@@ -436,11 +438,20 @@ nlohmann::json DeckRecommendService::recommend(nlohmann::json request){
     auto to_upper = [](std::string s)
     {
         for (char &c : s)
-            c = std::toupper(static_cast<unsigned char>(c));
+            c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
         return s;
     };
 
-    std::cout << '[' << to_upper(serverName(context.server)) << ']';
+    const auto now = std::chrono::system_clock::now();
+    const auto time = std::chrono::system_clock::to_time_t(now);
+    std::tm local{};
+#ifdef _WIN32
+    localtime_s(&local, &time);
+#else
+    localtime_r(&time, &local);
+#endif
+    std::cout << std::put_time(&local, "%m-%d %H:%M:%S") << " ["
+              << to_upper(serverName(context.server)) << ']';
     if (!context.userId.empty())
         std::cout << ' ' << context.userId;
     std::cout << " Recommend Request Cost";
@@ -448,7 +459,8 @@ nlohmann::json DeckRecommendService::recommend(nlohmann::json request){
     const char *sep = "";
     for (const auto &[algorithm, ms] : result.at("algorithm_ms").items())
     {
-        std::cout << sep << ' ' << to_upper(algorithm) << ": " << ms.get<double>() / 1000.0 << "s";
+        std::cout << sep << ' ' << to_upper(algorithm) << ": " << std::fixed
+                  << std::setprecision(4) << ms.get<double>() / 1000.0 << "s";
         sep = ",";
     }
     std::cout << std::endl;

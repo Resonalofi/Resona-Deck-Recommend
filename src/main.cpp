@@ -3,8 +3,11 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <csignal>
+#include <ctime>
 #include <filesystem>
+#include <iomanip>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -31,6 +34,18 @@ bool constantTimeEqual(const std::string& left, const std::string& right) {
         difference |= a ^ b;
     }
     return difference == 0;
+}
+
+void writeLogTime(std::ostream& out) {
+    const auto now = std::chrono::system_clock::now();
+    const auto time = std::chrono::system_clock::to_time_t(now);
+    std::tm local{};
+#ifdef _WIN32
+    localtime_s(&local, &time);
+#else
+    localtime_r(&time, &local);
+#endif
+    out << std::put_time(&local, "%m-%d %H:%M:%S") << ' ';
 }
 
 bool authorize(const httplib::Request& request, httplib::Response& response, const Settings& settings) {
@@ -93,6 +108,7 @@ int main(int argc, char** argv) {
                 );
             }
             catch (const std::exception& error) {
+                writeLogTime(std::cerr);
                 std::cerr << "recommend failed: " << error.what() << '\n';
                 response.status = 500;
                 response.set_content(R"({"detail":"Internal Server Error"})", "application/json");
@@ -109,6 +125,7 @@ int main(int argc, char** argv) {
         std::signal(SIGINT, stopServer);
         std::signal(SIGTERM, stopServer);
         runningServer.store(&server, std::memory_order_relaxed);
+        writeLogTime(std::cout);
         std::cout << "Resona-Deck-Recommend listening on " << settings.host << ':' << settings.port << '\n';
         if (!server.listen(settings.host, settings.port))
             throw std::runtime_error("failed to listen on configured address");
@@ -116,6 +133,7 @@ int main(int argc, char** argv) {
         return 0;
     }
     catch (const std::exception& error) {
+        writeLogTime(std::cerr);
         std::cerr << error.what() << '\n';
         return 1;
     }
