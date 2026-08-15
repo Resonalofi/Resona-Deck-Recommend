@@ -451,7 +451,7 @@ nlohmann::json DeckRecommendService::recommend(nlohmann::json request){
         std::cout << sep << ' ' << to_upper(algorithm) << ": " << ms.get<double>() / 1000.0 << "s";
         sep = ",";
     }
-    std::cout << '\n';
+    std::cout << std::endl;
 
     const auto engineSeconds = result.at("total_ms").get<double>() / 1000.0;
     auto response = buildResponse(std::move(result), context.target);

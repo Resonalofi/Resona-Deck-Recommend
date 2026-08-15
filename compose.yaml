@@ -2,6 +2,7 @@ services:
   deck-recommend:
     image: ${RESONA_DECK_IMAGE:-ghcr.io/resonalofi/resona-deck-recommend:latest}
     container_name: resona-deck-recommend
+    user: "0:0"
     build:
       context: .
     restart: unless-stopped
@@ -10,6 +11,8 @@ services:
     volumes:
       - ./config.docker.toml:/etc/resona-deck-recommend/config.toml:ro
       - resona-deck-data:/var/lib/resona-deck-recommend
+      - /opt/masterdata:/opt/masterdata
+      - /opt/resonabot/data:/opt/resonabot/data:ro
     read_only: true
     cap_drop:
       - ALL

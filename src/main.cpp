@@ -45,6 +45,8 @@ bool authorize(const httplib::Request& request, httplib::Response& response, con
 }
 
 int main(int argc, char** argv) {
+    std::cout << std::unitbuf;
+    std::cerr << std::unitbuf;
     try {
         std::filesystem::path configPath = "config.toml";
         std::filesystem::path dataPath = "data";
