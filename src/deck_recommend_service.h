@@ -23,7 +23,7 @@ class DeckRecommendService {
 public:
     explicit DeckRecommendService(Settings settings);
 
-    nlohmann::json recommend(nlohmann::json request);
+    nlohmann::json recommend(const std::string& requestBody);
     void reload(Server server);
 
 private:

@@ -91,14 +91,7 @@ int main(int argc, char** argv) {
             if (!authorize(request, response, settings))
                 return;
             try {
-                nlohmann::json body;
-                try {
-                    body = nlohmann::json::parse(request.body);
-                }
-                catch (const nlohmann::json::parse_error& error) {
-                    throw RequestError(error.what());
-                }
-                response.set_content(service.recommend(std::move(body)).dump(), "application/json");
+                response.set_content(service.recommend(request.body).dump(), "application/json");
             }
             catch (const RequestError& error) {
                 response.status = 422;

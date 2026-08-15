@@ -428,10 +428,17 @@ nlohmann::json DeckRecommendService::buildResponse(
     };
 }
 
-nlohmann::json DeckRecommendService::recommend(nlohmann::json request){
+nlohmann::json DeckRecommendService::recommend(const std::string& requestBody) {
+    SlotPermit permit(slots);
+    nlohmann::json request;
+    try {
+        request = nlohmann::json::parse(requestBody);
+    }
+    catch (const nlohmann::json::parse_error& error) {
+        throw RequestError(error.what());
+    }
     const auto context = validateRequest(request);
     const auto started = std::chrono::steady_clock::now();
-    SlotPermit permit(slots);
     const auto loadedState = stateFor(context.server);
     auto result = loadedState->engine->recommend(
         buildOptions(request, context.server, context.liveType, context.target, *loadedState));
