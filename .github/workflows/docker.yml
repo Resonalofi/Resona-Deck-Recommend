@@ -240,13 +240,34 @@ jobs:
             docker compose pull deck-recommend
             docker compose up -d --no-build deck-recommend
 
+            dump_container() {
+              docker compose ps -a
+              docker compose logs --tail=200 deck-recommend
+            }
+
+            container_running() {
+              cid="$(docker compose ps -q deck-recommend)"
+              [ -n "${cid}" ] && [ "$(docker inspect -f '{{.State.Running}}' "${cid}")" = "true" ]
+            }
+
+            if ! container_running; then
+              echo "Container is not running after compose up."
+              dump_container
+              exit 1
+            fi
+
             for i in $(seq 1 60); do
               if curl -fsS http://127.0.0.1:23457/healthz; then
                 exit 0
               fi
+              if ! container_running; then
+                echo "Container exited before /healthz became ready."
+                dump_container
+                exit 1
+              fi
               sleep 5
             done
 
-            docker compose ps
-            docker compose logs --tail=100 deck-recommend
+            echo "/healthz did not become ready."
+            dump_container
             exit 1

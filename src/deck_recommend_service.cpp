@@ -4,6 +4,8 @@
 
 #include <algorithm>
 #include <chrono>
+#include <iostream>
+#include <cctype>
 #include <limits>
 #include <optional>
 #include <stdexcept>
@@ -17,6 +19,7 @@ struct RequestContext {
     Server server;
     std::string liveType;
     std::string target;
+    std::string userId;
 };
 
 class SlotPermit {
@@ -120,7 +123,12 @@ RequestContext validateRequest(const nlohmann::json& request) {
         throw RequestError("invalid cal_tar: " + target);
 
     try {
-        return {parseServer(request.at("server").get<std::string>()), liveType, target};
+        return {
+            parseServer(request.at("server").get<std::string>()),
+            liveType,
+            target,
+            request.value("user_id", std::string{}),
+        };
     }
     catch (const std::invalid_argument& error) {
         throw RequestError(error.what());
@@ -418,18 +426,39 @@ nlohmann::json DeckRecommendService::buildResponse(
     };
 }
 
-nlohmann::json DeckRecommendService::recommend(nlohmann::json request) {
+nlohmann::json DeckRecommendService::recommend(nlohmann::json request){
     const auto context = validateRequest(request);
     const auto started = std::chrono::steady_clock::now();
     SlotPermit permit(slots);
     const auto loadedState = stateFor(context.server);
     auto result = loadedState->engine->recommend(
-        buildOptions(request, context.server, context.liveType, context.target, *loadedState)
-    );
+        buildOptions(request, context.server, context.liveType, context.target, *loadedState));
+    auto to_upper = [](std::string s)
+    {
+        for (char &c : s)
+            c = std::toupper(static_cast<unsigned char>(c));
+        return s;
+    };
+
+    std::cout << '[' << to_upper(serverName(context.server)) << ']';
+    if (!context.userId.empty())
+        std::cout << ' ' << context.userId;
+    std::cout << " Recommend Request Cost";
+
+    const char *sep = "";
+    for (const auto &[algorithm, ms] : result.at("algorithm_ms").items())
+    {
+        std::cout << sep << ' ' << to_upper(algorithm) << ": " << ms.get<double>() / 1000.0 << "s";
+        sep = ",";
+    }
+    std::cout << '\n';
+
     const auto engineSeconds = result.at("total_ms").get<double>() / 1000.0;
     auto response = buildResponse(std::move(result), context.target);
     response["queue_wait"] = std::chrono::duration<double>(
-        std::chrono::steady_clock::now() - started
-    ).count() - engineSeconds;
+                                 std::chrono::steady_clock::now() - started)
+                                 .count() -
+                             engineSeconds;
+
     return response;
 }

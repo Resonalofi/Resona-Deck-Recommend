@@ -1,6 +1,7 @@
 services:
   deck-recommend:
     image: ${RESONA_DECK_IMAGE:-ghcr.io/resonalofi/resona-deck-recommend:latest}
+    container_name: resona-deck-recommend
     build:
       context: .
     restart: unless-stopped
@@ -15,6 +16,11 @@ services:
     security_opt:
       - no-new-privileges:true
     stop_grace_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   resona-deck-data:
