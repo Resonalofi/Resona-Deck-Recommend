@@ -47,8 +47,12 @@ private:
 
     Settings settings;
     std::counting_semaphore<> slots;
+    std::shared_ptr<const State> loadState() const;
+    void storeState(std::shared_ptr<const State> next);
+
     std::atomic<std::uint64_t> nextGeneration = 0;
     std::array<std::atomic<std::uint64_t>, 3> desiredGenerations;
-    std::atomic<std::shared_ptr<const State>> state;
+    std::shared_ptr<const State> state;
+    mutable std::mutex stateMutex;
     std::mutex loadMutex;
 };

@@ -165,7 +165,17 @@ DeckRecommendService::DeckRecommendService(Settings settings)
     auto initial = std::make_shared<State>();
     initial->engine = std::make_shared<sekai_deck_recommend::NativeEngine>();
     initial->generations.fill(std::numeric_limits<std::uint64_t>::max());
-    state.store(std::move(initial), std::memory_order_release);
+    storeState(std::move(initial));
+}
+
+std::shared_ptr<const DeckRecommendService::State> DeckRecommendService::loadState() const {
+    std::lock_guard lock(stateMutex);
+    return state;
+}
+
+void DeckRecommendService::storeState(std::shared_ptr<const State> next) {
+    std::lock_guard lock(stateMutex);
+    state = std::move(next);
 }
 
 void DeckRecommendService::reload(Server server) {
@@ -176,13 +186,13 @@ void DeckRecommendService::reload(Server server) {
 std::shared_ptr<const DeckRecommendService::State> DeckRecommendService::stateFor(Server server) {
     const auto index = serverIndex(server);
     auto desired = desiredGenerations[index].load(std::memory_order_acquire);
-    auto current = state.load(std::memory_order_acquire);
+    auto current = loadState();
     if (current->generations[index] == desired)
         return current;
 
     std::lock_guard lock(loadMutex);
     desired = desiredGenerations[index].load(std::memory_order_acquire);
-    current = state.load(std::memory_order_acquire);
+    current = loadState();
     if (current->generations[index] == desired)
         return current;
 
@@ -242,7 +252,7 @@ std::shared_ptr<const DeckRecommendService::State> DeckRecommendService::stateFo
     next->generations[index] = desired;
     next->masterdataIdentities[index] = masterIdentity;
     next->musicmetaIdentities[index] = musicIdentity;
-    state.store(next, std::memory_order_release);
+    storeState(next);
     return next;
 }
 
