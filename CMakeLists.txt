@@ -15,7 +15,7 @@ set(SEKAI_DECK_RECOMMEND_SOURCE_DIR
 
 if (NOT EXISTS "${SEKAI_DECK_RECOMMEND_SOURCE_DIR}/CMakeLists.txt")
     message(FATAL_ERROR
-        "sekai-deck-recommend-cpp is missing; run git submodule update --init && git submodule update --init sekai-deck-recommend-cpp/3rdparty/json")
+        "sekai-deck-recommend-cpp is missing; run git submodule update --init && git -C sekai-deck-recommend-cpp submodule update --init 3rdparty/json")
 endif()
 
 set(SEKAI_DECK_RECOMMEND_BUILD_PYTHON OFF CACHE BOOL "" FORCE)

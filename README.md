@@ -23,7 +23,7 @@ Header: X-Resona-Secret
 git clone https://github.com/Resonalofi/Resona-Deck-Recommend.git
 cd Resona-Deck-Recommend
 git submodule update --init
-git submodule update --init sekai-deck-recommend-cpp/3rdparty/json
+git -C sekai-deck-recommend-cpp submodule update --init 3rdparty/json
 ```
 
 Linux：

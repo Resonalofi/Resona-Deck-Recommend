@@ -24,7 +24,7 @@ jobs:
 
       - name: Init nlohmann/json
         shell: bash
-        run: git submodule update --init sekai-deck-recommend-cpp/3rdparty/json
+        run: git -C sekai-deck-recommend-cpp submodule update --init 3rdparty/json
 
       - name: Install native dependencies
         run: sudo apt-get update && sudo apt-get install -y libssl-dev ninja-build
@@ -59,7 +59,7 @@ jobs:
 
       - name: Init nlohmann/json
         shell: bash
-        run: git submodule update --init sekai-deck-recommend-cpp/3rdparty/json
+        run: git -C sekai-deck-recommend-cpp submodule update --init 3rdparty/json
 
       - name: Configure Windows build
         run: cmake -S . -B build
@@ -92,7 +92,7 @@ jobs:
 
       - name: Init nlohmann/json
         shell: bash
-        run: git submodule update --init sekai-deck-recommend-cpp/3rdparty/json
+        run: git -C sekai-deck-recommend-cpp submodule update --init 3rdparty/json
 
       - name: Install build dependencies
         run: brew install ninja openssl@3
