@@ -136,7 +136,7 @@ jobs:
         run: echo "ref=$(git rev-parse :sekai-deck-recommend-cpp)" >> "$GITHUB_OUTPUT"
 
       - name: Download release programs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: release-files
           pattern: resona-deck-recommend-*
