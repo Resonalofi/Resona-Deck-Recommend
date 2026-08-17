@@ -7,6 +7,7 @@ RUN apt-get update \
         build-essential \
         ca-certificates \
         cmake \
+        git \
         libssl-dev \
         ninja-build \
     && rm -rf /var/lib/apt/lists/*
