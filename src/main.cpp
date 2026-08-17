@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cctype>
 #include <chrono>
 #include <csignal>
 #include <ctime>
@@ -57,6 +58,12 @@ bool authorize(const httplib::Request& request, httplib::Response& response, con
     return false;
 }
 
+std::string toUpper(std::string s) {
+    for (char& c : s)
+        c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+    return s;
+}
+
 }
 
 int main(int argc, char** argv) {
@@ -100,9 +107,7 @@ int main(int argc, char** argv) {
                     "application/json"
                 );
             }
-            catch (const std::exception& error) {
-                writeLogTime(std::cerr);
-                std::cerr << "recommend failed: " << error.what() << '\n';
+            catch (const std::exception&) {
                 response.status = 500;
                 response.set_content(R"({"detail":"Internal Server Error"})", "application/json");
             }
@@ -111,7 +116,10 @@ int main(int argc, char** argv) {
         server.Post(R"(/(jp|cn|tw)/cache/reload)", [&](const httplib::Request& request, httplib::Response& response) {
             if (!authorize(request, response, settings))
                 return;
-            service.reload(parseServer(request.matches[1].str()));
+            const auto serverName = request.matches[1].str();
+            service.reload(parseServer(serverName));
+            writeLogTime(std::cout);
+            std::cout << " [" << toUpper(serverName) << "] Master cache reloaded" << '\n';
             response.set_content(R"({"status":"ok"})", "application/json");
         });
 

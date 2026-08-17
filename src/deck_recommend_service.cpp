@@ -191,6 +191,10 @@ void DeckRecommendService::storeState(std::shared_ptr<const State> next) {
 void DeckRecommendService::reload(Server server) {
     const auto generation = nextGeneration.fetch_add(1, std::memory_order_acq_rel) + 1;
     desiredGenerations[serverIndex(server)].store(generation, std::memory_order_release);
+    if (settings.masterdataFor(server).masterdataOverride)
+        for (const auto candidate : servers)
+            if (candidate != server)
+                desiredGenerations[serverIndex(candidate)].store(generation, std::memory_order_release);
 }
 
 std::shared_ptr<const DeckRecommendService::State> DeckRecommendService::stateFor(Server server) {
@@ -440,8 +444,6 @@ nlohmann::json DeckRecommendService::recommend(const std::string& requestBody) {
     const auto context = validateRequest(request);
     const auto started = std::chrono::steady_clock::now();
     const auto loadedState = stateFor(context.server);
-    auto result = loadedState->engine->recommend(
-        buildOptions(request, context.server, context.liveType, context.target, *loadedState));
     auto to_upper = [](std::string s)
     {
         for (char &c : s)
@@ -449,18 +451,33 @@ nlohmann::json DeckRecommendService::recommend(const std::string& requestBody) {
         return s;
     };
 
-    const auto now = std::chrono::system_clock::now();
-    const auto time = std::chrono::system_clock::to_time_t(now);
-    std::tm local{};
+    auto writeLogPrefix = [&]() {
+        const auto now = std::chrono::system_clock::now();
+        const auto time = std::chrono::system_clock::to_time_t(now);
+        std::tm local{};
 #ifdef _WIN32
-    localtime_s(&local, &time);
+        localtime_s(&local, &time);
 #else
-    localtime_r(&time, &local);
+        localtime_r(&time, &local);
 #endif
-    std::cout << std::put_time(&local, "%m-%d %H:%M:%S") << " ["
-              << to_upper(serverName(context.server)) << ']';
-    if (!context.userId.empty())
-        std::cout << ' ' << context.userId;
+        std::cout << std::put_time(&local, "%m-%d %H:%M:%S") << " ["
+                  << to_upper(serverName(context.server)) << ']';
+        if (!context.userId.empty())
+            std::cout << ' ' << context.userId;
+    };
+
+    nlohmann::json result;
+    try {
+        result = loadedState->engine->recommend(
+            buildOptions(request, context.server, context.liveType, context.target, *loadedState));
+    }
+    catch (const std::exception&) {
+        writeLogPrefix();
+        std::cout << " Recommend Request Failed" << std::endl;
+        throw;
+    }
+
+    writeLogPrefix();
     std::cout << " Recommend Request Cost";
 
     const char *sep = "";
