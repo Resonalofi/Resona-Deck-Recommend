@@ -21,7 +21,7 @@ RUN cmake -S /src/service -B /src/build -G Ninja \
     && strip /src/build/resona-deck-recommend \
     && install -d -o 65532 -g 65532 /runtime/var/lib/resona-deck-recommend
 
-FROM gcr.io/distroless/cc-debian12:nonroot@sha256:adcd20c7b4c988b73cbfbddb26d2eee574571e6d7c9ffea29b3821e0690efb77 AS runtime
+FROM gcr.io/distroless/cc-debian12:nonroot@sha256:9dac0a79194e45a7da0158a9c6da57b217585af0786db3845d1f0ec1a0dd182f AS runtime
 
 COPY --from=build /src/build/resona-deck-recommend /usr/local/bin/resona-deck-recommend
 COPY --from=build /src/service/sekai-deck-recommend-cpp/data /usr/local/share/resona-deck-recommend
