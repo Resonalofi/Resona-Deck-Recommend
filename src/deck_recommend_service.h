@@ -32,7 +32,6 @@ private:
         std::array<std::uint64_t, 3> generations{};
         std::array<std::string, 3> masterdataIdentities;
         std::array<std::string, 3> musicmetaIdentities;
-        std::array<std::shared_ptr<const nlohmann::json>, 3> eventCards;
     };
 
     std::shared_ptr<const State> stateFor(Server server);
@@ -40,8 +39,7 @@ private:
         nlohmann::json& request,
         Server server,
         const std::string& liveType,
-        const std::string& target,
-        const State& state
+        const std::string& target
     ) const;
     nlohmann::json buildResponse(nlohmann::json result, const std::string& target) const;
 

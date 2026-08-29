@@ -107,7 +107,9 @@ int main(int argc, char** argv) {
                     "application/json"
                 );
             }
-            catch (const std::exception&) {
+            catch (const std::exception& error) {
+                writeLogTime(std::cerr);
+                std::cerr << "unhandled: " << error.what() << '\n';
                 response.status = 500;
                 response.set_content(R"({"detail":"Internal Server Error"})", "application/json");
             }

@@ -11,6 +11,7 @@
 #include <limits>
 #include <optional>
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 
 namespace {
@@ -60,10 +61,18 @@ void validateCardConfig(const nlohmann::json& value, bool requireCardId) {
         throw RequestError("card configuration must be an object");
     if (requireCardId)
         requireType(value, "card_id", nlohmann::json::value_t::number_integer);
-    for (const auto* key : {
-            "disable", "level_max", "episode_read", "master_max", "skill_max", "canvas"
-        })
+    for (const auto* key : {"disable", "level_max", "episode_read", "canvas"})
         requireType(value, key, nlohmann::json::value_t::boolean, true);
+    for (const auto* key : {"master_rank", "skill_level"})
+        requireType(value, key, nlohmann::json::value_t::number_integer, true, true);
+    if (const auto rank = value.find("master_rank");
+        rank != value.end() && !rank->is_null() &&
+        (rank->get<int>() < 0 || rank->get<int>() > 5))
+        throw RequestError("专精等级只能是 0-5");
+    if (const auto level = value.find("skill_level");
+        level != value.end() && !level->is_null() &&
+        (level->get<int>() < 1 || level->get<int>() > 4))
+        throw RequestError("技能等级只能是 1-4");
 }
 
 RequestContext validateRequest(const nlohmann::json& request) {
@@ -112,9 +121,10 @@ RequestContext validateRequest(const nlohmann::json& request) {
 
     requireType(request, "bonus_cards", nlohmann::json::value_t::object, true, true);
     if (const auto bonus = request.find("bonus_cards");
-        bonus != request.end() && !bonus->is_null())
-        for (const auto* key : {"force", "max_mr", "max_skill", "canvas"})
-            requireType(*bonus, key, nlohmann::json::value_t::boolean, true);
+        bonus != request.end() && !bonus->is_null()) {
+        requireType(*bonus, "force", nlohmann::json::value_t::boolean, true);
+        validateCardConfig(*bonus, false);
+    }
 
     const auto liveType = request.value("live_type", std::string("multi"));
     if (liveType != "multi" && liveType != "solo" && liveType != "auto" &&
@@ -138,14 +148,16 @@ RequestContext validateRequest(const nlohmann::json& request) {
 }
 
 nlohmann::json cardConfig(const nlohmann::json& value) {
-    return {
+    nlohmann::json result = {
         {"disable", value.value("disable", false)},
         {"level_max", value.value("level_max", true)},
         {"episode_read", value.value("episode_read", true)},
-        {"master_max", value.value("master_max", false)},
-        {"skill_max", value.value("skill_max", false)},
         {"canvas", value.value("canvas", false)},
     };
+    for (const auto* key : {"master_rank", "skill_level"})
+        if (const auto it = value.find(key); it != value.end() && !it->is_null())
+            result[key] = it->get<int>();
+    return result;
 }
 
 nlohmann::json requiredCard(const nlohmann::json& value) {
@@ -163,6 +175,52 @@ void copyOptional(
     const auto it = source.find(sourceKey);
     if (it != source.end() && !it->is_null())
         target[targetKey == nullptr ? sourceKey : targetKey] = *it;
+}
+
+struct EngineErrorTranslation {
+    std::string_view prefix;
+    std::string_view chinese;
+    bool appendRest = false;
+};
+
+constexpr EngineErrorTranslation engineErrorTranslations[] = {
+    {"Fixed cards size exceeds member count", "必须包含的卡数量超过了队伍人数"},
+    {"Fixed cards size is larger than member size", "必须包含的卡数量超过了队伍人数"},
+    {"Fixed characters size exceeds member count", "必须包含的角色数量超过了队伍人数"},
+    {"fixed_characters and fixed_cards cannot be used together", "必须包含的卡和必须包含的角色只能指定其一"},
+    {"Cannot set both fixed cards and fixed characters", "必须包含的卡和必须包含的角色只能指定其一"},
+    {"fixed_characters is not valid for challenge live", "挑战 Live 不支持指定必须包含的角色"},
+    {"Cannot set fixed characters in challenge live", "挑战 Live 不支持指定必须包含的角色"},
+    {"Invalid fixed card ID: ", "必须包含的卡不存在：", true},
+    {"Invalid fixed character ID: ", "必须包含的角色不存在：", true},
+    {"Fixed cards have duplicate cards", "必须包含的卡存在重复"},
+    {"Fixed cards have duplicate characters", "必须包含的卡存在重复角色"},
+    {"Fixed cards have invalid characters", "必须包含的卡与挑战角色不符"},
+    {"Cannot recommend any deck", "可用卡牌不足，无法组出队伍"},
+    {"Event not found for eventId", "指定的活动不存在"},
+    {"Event type not found for", "指定的活动不存在"},
+    {"Music meta not found", "找不到该歌曲对应难度的谱面数据"},
+    {"World bloom chapter not found", "该 WorldLink 活动中没有这个角色的章节"},
+    {"Invalid world bloom character ID", "无效的 WorldLink 角色"},
+    {"Invalid challenge character ID", "无效的挑战角色"},
+    {"challenge_live_character_id is required", "挑战 Live 组卡需要指定角色"},
+    {"event_id is not valid for challenge live", "挑战 Live 不能指定活动"},
+    {"final chapter event is not supported for bonus target", "终章活动不支持指定加成组卡"},
+    {"Bonus target requires event", "指定加成组卡需要有活动"},
+    {"user data key not found", "抓包数据不完整，请重新上传"},
+    {"Failed to load user data", "抓包数据解析失败，请重新上传"},
+};
+
+std::optional<std::string> translateEngineError(const std::string& message) {
+    for (const auto& entry : engineErrorTranslations) {
+        if (message.rfind(entry.prefix, 0) != 0)
+            continue;
+        std::string result{entry.chinese};
+        if (entry.appendRest)
+            result += message.substr(entry.prefix.size());
+        return result;
+    }
+    return std::nullopt;
 }
 
 }
@@ -233,16 +291,12 @@ std::shared_ptr<const DeckRecommendService::State> DeckRecommendService::stateFo
             "honors",
             fetchWithFallback(settings.sourceFor(server, "honors"), "honors")
         );
-        next->eventCards[index] = current->eventCards[serverIndex(*sharedMaster)];
     }
     else {
         for (const auto& key : sekai_deck_recommend::requiredMasterdataKeys())
             masterdata.emplace(key, fetchWithFallback(settings.sourceFor(server, key), key));
         for (const auto& key : sekai_deck_recommend::optionalMasterdataKeys())
             masterdata.emplace(key, fetchWithFallback(settings.sourceFor(server, key), key));
-        next->eventCards[index] = std::make_shared<const nlohmann::json>(
-            nlohmann::json::parse(masterdata.at("eventCards"))
-        );
     }
     engine->updateMasterdata(
         std::move(masterdata),
@@ -274,8 +328,7 @@ nlohmann::json DeckRecommendService::buildOptions(
     nlohmann::json& request,
     Server server,
     const std::string& liveType,
-    const std::string& target,
-    const State& loadedState
+    const std::string& target
 ) const {
     nlohmann::json options = {
         {"target", target},
@@ -293,35 +346,14 @@ nlohmann::json DeckRecommendService::buildOptions(
 
     const auto requiredCards = request.value("require_cards", nlohmann::json::array());
     const auto requiredCharacters = request.value("require_characters", nlohmann::json::array());
-    nlohmann::json eventCardConfigs = nlohmann::json::array();
+
     const auto bonus = request.find("bonus_cards");
     if (bonus != request.end() && !bonus->is_null() && bonus->value("force", false)) {
-        const auto eventId = request.find("event_id");
-        for (const auto& eventCard : *loadedState.eventCards[serverIndex(server)]) {
-            if (eventId == request.end() || eventId->is_null() ||
-                eventCard.at("eventId").get<int>() != eventId->get<int>() ||
-                eventCard.at("bonusRate").get<double>() != 20.0)
-                continue;
-            eventCardConfigs.push_back({
-                {"card_id", eventCard.at("cardId").get<int>()},
-                {"level_max", true},
-                {"episode_read", true},
-                {"master_max", bonus->value("max_mr", false)},
-                {"skill_max", bonus->value("max_skill", false)},
-                {"canvas", bonus->value("canvas", false)},
-            });
-        }
+        options["own_all_bonus_cards"] = true;
+        options["bonus_card_config"] = cardConfig(*bonus);
     }
 
-    if (!eventCardConfigs.empty()) {
-        options["single_card_configs"] = eventCardConfigs;
-        options["fixed_cards"] = nlohmann::json::array();
-        for (const auto& card : requiredCards)
-            options["fixed_cards"].push_back(card.at("card_id"));
-        for (const auto& card : eventCardConfigs)
-            options["fixed_cards"].push_back(card.at("card_id"));
-    }
-    else if (!requiredCards.empty()) {
+    if (!requiredCards.empty()) {
         options["single_card_configs"] = nlohmann::json::array();
         options["fixed_cards"] = nlohmann::json::array();
         for (const auto& card : requiredCards) {
@@ -329,7 +361,7 @@ nlohmann::json DeckRecommendService::buildOptions(
             options["fixed_cards"].push_back(card.at("card_id"));
         }
     }
-    else if (!requiredCharacters.empty()) {
+    if (!requiredCharacters.empty()) {
         options["fixed_characters"] = requiredCharacters;
     }
 
@@ -469,11 +501,13 @@ nlohmann::json DeckRecommendService::recommend(const std::string& requestBody) {
     nlohmann::json result;
     try {
         result = loadedState->engine->recommend(
-            buildOptions(request, context.server, context.liveType, context.target, *loadedState));
+            buildOptions(request, context.server, context.liveType, context.target));
     }
-    catch (const std::exception&) {
+    catch (const std::exception& error) {
         writeLogPrefix();
-        std::cout << " Recommend Request Failed" << std::endl;
+        std::cout << " Recommend Request Failed: " << error.what() << std::endl;
+        if (const auto translated = translateEngineError(error.what()))
+            throw RequestError(*translated);
         throw;
     }
 
