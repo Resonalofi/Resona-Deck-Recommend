@@ -97,6 +97,11 @@ RequestContext validateRequest(const nlohmann::json& request) {
         nlohmann::json::value_t::number_integer,
         true
     );
+    for (const auto* key : {
+        "area_item_config", "character_rank_config", "honor_config", "mysekai_config"
+    }) {
+        requireType(request, key, nlohmann::json::value_t::object, true, true);
+    }
 
     for (const auto* key : {"tar_bonus_list", "require_characters"}) {
         requireType(request, key, nlohmann::json::value_t::array, true);
@@ -370,6 +375,12 @@ nlohmann::json DeckRecommendService::buildOptions(
         options["multi_live_teammate_power"] = request.value("multi_live_teammate_power", 250000);
     }
 
+    for (const auto* key : {
+        "area_item_config", "character_rank_config", "honor_config", "mysekai_config"
+    }) {
+        copyOptional(request, options, key);
+    }
+
     const auto targetBonuses = request.value("tar_bonus_list", std::vector<int>{});
     if (!targetBonuses.empty()) {
         options["target_bonus_list"] = targetBonuses;
@@ -451,8 +462,22 @@ nlohmann::json DeckRecommendService::buildResponse(
             {"cards", std::move(cards)},
             {"event_bonus_rate", deck.at("event_bonus_rate").get<double>()},
             {"support_deck_bonus_rate", deck.at("support_deck_bonus_rate").get<double>()},
+            {"event_diff_attr_bonus_rate", deck.value("event_diff_attr_bonus_rate", 0.0)},
+            {"event_shuffle_unit_bonus_rate", deck.value("event_shuffle_unit_bonus_rate", 0.0)},
             {"source", std::move(source)},
         });
+        if (const auto sub = deck.find("wl_sub_deck"); sub != deck.end() && !sub->is_null()) {
+            auto supportDeck = *sub;
+            if (const auto cards = supportDeck.find("cards"); cards != supportDeck.end()) {
+                for (auto& card : *cards) {
+                    if (card.contains("has_canvas_bonus")) {
+                        card["canvas"] = card.at("has_canvas_bonus");
+                        card.erase("has_canvas_bonus");
+                    }
+                }
+            }
+            responseDecks.back()["wl_sub_deck"] = std::move(supportDeck);
+        }
     }
 
     nlohmann::json durations = nlohmann::json::object();
