@@ -89,6 +89,8 @@ RequestContext validateRequest(const nlohmann::json& request) {
     requireType(request, "event_id", nlohmann::json::value_t::number_integer, true, true);
     requireType(request, "event_attr", nlohmann::json::value_t::string, true, true);
     requireType(request, "event_unit", nlohmann::json::value_t::string, true, true);
+    for (const auto* key : {"event_me_unit", "bonus_card_unit", "bonus_card_attr", "multi_unit_bonus_evaluation"})
+        requireType(request, key, nlohmann::json::value_t::string, true, true);
     requireType(request, "cal_tar", nlohmann::json::value_t::string, true);
     requireType(request, "real_skill", nlohmann::json::value_t::number_integer, true, true);
     requireType(
@@ -210,7 +212,11 @@ constexpr EngineErrorTranslation engineErrorTranslations[] = {
     {"Invalid challenge character ID", "无效的挑战角色"},
     {"challenge_live_character_id is required", "挑战 Live 组卡需要指定角色"},
     {"event_id is not valid for challenge live", "挑战 Live 不能指定活动"},
-    {"final chapter event is not supported for bonus target", "终章活动不支持指定加成组卡"},
+    {"event_me_unit requires", "回忆活动模拟仅支持马拉松，不能同时指定其他活动参数"},
+    {"Invalid memory event unit: ", "无效的回忆活动团体：", true},
+    {"Invalid bonus card unit: ", "无效的全当期补卡团体：", true},
+    {"Invalid bonus card attr: ", "无效的全当期补卡属性：", true},
+    {"Invalid multi unit bonus evaluation: ", "无效的多组合家具计算方式：", true},
     {"Bonus target requires event", "指定加成组卡需要有活动"},
     {"user data key not found", "抓包数据不完整，请重新上传"},
     {"Failed to load user data", "抓包数据解析失败，请重新上传"},
@@ -376,7 +382,8 @@ nlohmann::json DeckRecommendService::buildOptions(
     }
 
     for (const auto* key : {
-        "area_item_config", "character_rank_config", "honor_config", "mysekai_config"
+        "area_item_config", "character_rank_config", "honor_config", "mysekai_config",
+        "event_me_unit", "bonus_card_unit", "bonus_card_attr", "multi_unit_bonus_evaluation"
     }) {
         copyOptional(request, options, key);
     }

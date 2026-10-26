@@ -15,6 +15,16 @@ Header: X-Resona-Secret
 
 `GET /healthz` 不需要 secret，返回 `ok`。
 
+组卡请求支持这些可选参数：
+
+| 参数 | 用途 |
+| --- | --- |
+| `event_me_unit` | 模拟指定团体的回忆活动。全属性基础加成 25%，该团体原始角色基础加成 75%；不能与 `event_id`、`event_attr`、`event_unit` 或 WL 参数同时使用，也不适用于挑战 Live。 |
+| `bonus_card_unit` / `bonus_card_attr` | 开启 `bonus_cards.force` 时限制模拟补入的当期卡团体和属性，已有卡牌仍保留在候选池中。 |
+| `multi_unit_bonus_evaluation` | 多组合家具效果计算方式：`by_deck` 按队伍判断（默认）、`force_on` 始终启用、`force_off` 关闭。 |
+
+专精和技能等级模拟应用于主队；WL 支援保留卡牌实际专精与技能等级。
+
 ## 本地构建
 
 依赖 CMake 3.20+、C++20 编译器和 OpenSSL 3（仅 Linux）。
