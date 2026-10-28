@@ -28,7 +28,7 @@ jobs:
             platform: linux/arm64
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: true
 
@@ -151,7 +151,7 @@ jobs:
           test -n "${DEPLOY_SSH_KEY}" || (echo "DEPLOY_SSH_KEY is required" && exit 1)
 
       - name: Checkout deploy files
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Bootstrap deploy directory
         uses: appleboy/ssh-action@v1
