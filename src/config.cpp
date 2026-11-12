@@ -1,10 +1,12 @@
 #include "config.h"
 
+#include <algorithm>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
 
 #include <toml++/toml.hpp>
+#include <sekai_deck_recommend/native.h>
 
 namespace {
 
@@ -34,7 +36,8 @@ const MasterdataServer& Settings::masterdataFor(Server server) const {
 }
 
 FetchSource Settings::sourceFor(Server server, const std::string& key) const {
-    if (key == "honors") {
+    const auto& regionalKeys = sekai_deck_recommend::regionalMasterdataKeys();
+    if (std::find(regionalKeys.begin(), regionalKeys.end(), key) != regionalKeys.end()) {
         const auto& source = masterdataFor(server);
         return {source.location, source.fallback};
     }

@@ -7,7 +7,7 @@ services:
       context: .
     restart: unless-stopped
     ports:
-      - "127.0.0.1:23457:23457"
+      - "0.0.0.0:23457:23457"
     volumes:
       - ./config.docker.toml:/etc/resona-deck-recommend/config.toml:ro
       - resona-deck-data:/var/lib/resona-deck-recommend

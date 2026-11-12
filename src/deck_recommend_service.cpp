@@ -86,6 +86,7 @@ RequestContext validateRequest(const nlohmann::json& request) {
     requireType(request, "live_type", nlohmann::json::value_t::string, true);
     requireType(request, "force_wl", nlohmann::json::value_t::boolean, true);
     requireType(request, "character_id", nlohmann::json::value_t::number_integer, true, true);
+    requireType(request, "member", nlohmann::json::value_t::number_integer, true, true);
     requireType(request, "event_id", nlohmann::json::value_t::number_integer, true, true);
     requireType(request, "event_attr", nlohmann::json::value_t::string, true, true);
     requireType(request, "event_unit", nlohmann::json::value_t::string, true, true);
@@ -298,10 +299,8 @@ std::shared_ptr<const DeckRecommendService::State> DeckRecommendService::stateFo
 
     std::map<std::string, std::string> masterdata;
     if (sharedMaster.has_value()) {
-        masterdata.emplace(
-            "honors",
-            fetchWithFallback(settings.sourceFor(server, "honors"), "honors")
-        );
+        for (const auto& key : sekai_deck_recommend::regionalMasterdataKeys())
+            masterdata.emplace(key, fetchWithFallback(settings.sourceFor(server, key), key));
     }
     else {
         for (const auto& key : sekai_deck_recommend::requiredMasterdataKeys())
@@ -405,6 +404,7 @@ nlohmann::json DeckRecommendService::buildOptions(
 
     if (liveType == "challenge") {
         copyOptional(request, options, "character_id", "challenge_live_character_id");
+        copyOptional(request, options, "member");
         options.erase("fixed_characters");
     }
     else if (request.value("force_wl", false)) {
@@ -465,6 +465,7 @@ nlohmann::json DeckRecommendService::buildResponse(
         responseDecks.push_back({
             {"total_power", deck.at("total_power")},
             {"score", deck.at("score").get<double>()},
+            {"live_score", deck.at("live_score")},
             {"multi_live_score_up", deck.at("multi_live_score_up").get<double>()},
             {"cards", std::move(cards)},
             {"event_bonus_rate", deck.at("event_bonus_rate").get<double>()},

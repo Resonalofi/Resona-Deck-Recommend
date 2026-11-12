@@ -22,8 +22,11 @@ Header: X-Resona-Secret
 | `event_me_unit` | 模拟指定团体的回忆活动。全属性基础加成 25%，该团体原始角色基础加成 75%；不能与 `event_id`、`event_attr`、`event_unit` 或 WL 参数同时使用，也不适用于挑战 Live。 |
 | `bonus_card_unit` / `bonus_card_attr` | 开启 `bonus_cards.force` 时限制模拟补入的当期卡团体和属性，已有卡牌仍保留在候选池中。 |
 | `multi_unit_bonus_evaluation` | 多组合家具效果计算方式：`by_deck` 按队伍判断（默认）、`force_on` 始终启用、`force_off` 关闭。 |
+| `member` | 挑战 Live 的卡位数量，取值 2–5。省略时按上传角色等级自动计算；显式传入优先，例如 `"member": 5` 可模拟五卡挑战。 |
 
 专精和技能等级模拟应用于主队；WL 支援保留卡牌实际专精与技能等级。
+
+挑战组卡默认由引擎根据上传角色等级计算卡位：1／13／18／22 级分别解锁 2／3／4／5 张。调用方只需指定角色，也可用 `member` 覆盖。启用日服主数据覆盖时，称号 `honors` 仍从本服读取；挑战卡位不依赖额外主数据表。
 
 ## 本地构建
 
@@ -80,7 +83,7 @@ docker buildx build --load -t resona-deck-recommend:local .
 
 ```bash
 docker run --rm --name resona-deck-recommend \
-  -p 127.0.0.1:23457:23457 \
+  -p 0.0.0.0:23457:23457 \
   --mount type=bind,src="$PWD/config.docker.toml",dst=/etc/resona-deck-recommend/config.toml,readonly \
   --mount type=volume,src=resona-deck-data,dst=/var/lib/resona-deck-recommend \
   ghcr.io/resonalofi/resona-deck-recommend:latest

@@ -24,7 +24,7 @@ struct MasterdataServer : FetchSource {
 };
 
 struct Settings {
-    std::string host = "127.0.0.1";
+    std::string host = "0.0.0.0";
     std::uint16_t port = 23457;
     std::string resonaSecret;
     std::size_t poolSize = 1;
