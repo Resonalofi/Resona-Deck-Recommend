@@ -59,8 +59,10 @@ void requireType(
 void validateCardConfig(const nlohmann::json& value, bool requireCardId) {
     if (!value.is_object())
         throw RequestError("card configuration must be an object");
-    if (requireCardId)
+    if (requireCardId) {
         requireType(value, "card_id", nlohmann::json::value_t::number_integer);
+        requireType(value, "skill_form", nlohmann::json::value_t::string, true, true);
+    }
     for (const auto* key : {"disable", "level_max", "episode_read", "canvas"})
         requireType(value, key, nlohmann::json::value_t::boolean, true);
     for (const auto* key : {"master_rank", "skill_level"})
@@ -85,6 +87,8 @@ RequestContext validateRequest(const nlohmann::json& request) {
     requireType(request, "user_data", nlohmann::json::value_t::object);
     requireType(request, "live_type", nlohmann::json::value_t::string, true);
     requireType(request, "force_wl", nlohmann::json::value_t::boolean, true);
+    requireType(request, "keep_after_training_state", nlohmann::json::value_t::boolean, true);
+    requireType(request, "best_skill_as_leader", nlohmann::json::value_t::boolean, true);
     requireType(request, "character_id", nlohmann::json::value_t::number_integer, true, true);
     requireType(request, "member", nlohmann::json::value_t::number_integer, true, true);
     requireType(request, "event_id", nlohmann::json::value_t::number_integer, true, true);
@@ -171,6 +175,8 @@ nlohmann::json cardConfig(const nlohmann::json& value) {
 nlohmann::json requiredCard(const nlohmann::json& value) {
     auto result = cardConfig(value);
     result["card_id"] = value.at("card_id").get<int>();
+    if (const auto form = value.find("skill_form"); form != value.end() && !form->is_null())
+        result["skill_form"] = form->get<std::string>();
     return result;
 }
 
@@ -218,6 +224,9 @@ constexpr EngineErrorTranslation engineErrorTranslations[] = {
     {"Invalid bonus card unit: ", "无效的全当期补卡团体：", true},
     {"Invalid bonus card attr: ", "无效的全当期补卡属性：", true},
     {"Invalid multi unit bonus evaluation: ", "无效的多组合家具计算方式：", true},
+    {"Invalid card skill form: ", "无效的花前花后技能选项：", true},
+    {"Card has no before/after training skills: ", "该卡没有花前花后两种技能：", true},
+    {"After training skill requires a trained card: ", "使用花后技能需要已特训的卡牌：", true},
     {"Bonus target requires event", "指定加成组卡需要有活动"},
     {"user data key not found", "抓包数据不完整，请重新上传"},
     {"Failed to load user data", "抓包数据解析失败，请重新上传"},
@@ -382,7 +391,8 @@ nlohmann::json DeckRecommendService::buildOptions(
 
     for (const auto* key : {
         "area_item_config", "character_rank_config", "honor_config", "mysekai_config",
-        "event_me_unit", "bonus_card_unit", "bonus_card_attr", "multi_unit_bonus_evaluation"
+        "event_me_unit", "bonus_card_unit", "bonus_card_attr", "multi_unit_bonus_evaluation",
+        "keep_after_training_state", "best_skill_as_leader"
     }) {
         copyOptional(request, options, key);
     }

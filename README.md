@@ -23,6 +23,9 @@ Header: X-Resona-Secret
 | `bonus_card_unit` / `bonus_card_attr` | 开启 `bonus_cards.force` 时限制模拟补入的当期卡团体和属性，已有卡牌仍保留在候选池中。 |
 | `multi_unit_bonus_evaluation` | 多组合家具效果计算方式：`by_deck` 按队伍判断（默认）、`force_on` 始终启用、`force_off` 关闭。 |
 | `member` | 挑战 Live 的卡位数量，取值 2–5。省略时按上传角色等级自动计算；显式传入优先，例如 `"member": 5` 可模拟五卡挑战。 |
+| `require_cards[].skill_form` | 必选卡的技能形式：`"before_training"` 花前、`"after_training"` 花后，省略或 `null` 自动选择。仅适用于双技能卡；选择花前保留特训综合力，花后要求已特训。 |
+| `keep_after_training_state` | 是否沿用上传卡面的 Bfes 技能形式，默认 `false`；自动打歌使用 `true`。单卡 `skill_form` 优先。 |
+| `best_skill_as_leader` | 是否允许选择最优技能卡作队长，默认 `true`；固定实际编队算分时传 `false`，并把实际队长放在 `require_cards` 第一项。 |
 
 专精和技能等级模拟应用于主队；WL 支援保留卡牌实际专精与技能等级。
 
